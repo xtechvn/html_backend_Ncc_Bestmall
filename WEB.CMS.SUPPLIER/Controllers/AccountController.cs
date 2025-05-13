@@ -223,12 +223,15 @@ namespace WEB.CMS.SUPPLIER.Controllers
         {
             try
             {
-                var claims = new List<Claim>();
-                claims.Add(new Claim(ClaimTypes.NameIdentifier, model.Entity.Id.ToString()));
-                claims.Add(new Claim(ClaimTypes.Name, model.Entity.UserName));
-                claims.Add(new Claim("DepartmentId", (model.Entity.DepartmentId ?? 0).ToString()));
-                claims.Add(new Claim(ClaimTypes.Email, model.Entity.Email));
-                claims.Add(new Claim(ClaimTypes.Role, string.Join(",", model.RoleIdList)));
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, model.Entity.Id.ToString()),
+                    new Claim(ClaimTypes.Name, model.Entity.UserName),
+                    new Claim("DepartmentId", (model.Entity.DepartmentId ?? 0).ToString()),
+                    new Claim(ClaimTypes.Email, model.Entity.Email),
+                    new Claim(ClaimTypes.Role, string.Join(",", model.RoleIdList)),
+                    new Claim("SupplierId", string.Join(",", model.Entity.SupplierId == null || model.Entity.SupplierId <= 0 ? 0 : (int)model.Entity.SupplierId))
+                };
 
                 //--Get and Cache Permission:
                 UserRoleCacheModel user_role_cache = new UserRoleCacheModel();

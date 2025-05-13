@@ -14,7 +14,7 @@ var product_detail_new = {
         product_detail_new.ShowProductTab()
         product_detail_new.DynamicBind()
         product_detail_new.RenderAttributesPrice()
-        product_detail_new.Select2Supplier($('#supplier-id select'))
+       // product_detail_new.Select2Supplier($('#supplier-id select'))
         product_detail_new.Select2Label($('#label-id select'))
         $('#specifications-list .spec-value').attr('readonly', 'readonly')
         
@@ -767,7 +767,6 @@ var product_detail_new = {
             discount: 0,
             quanity_of_stock: $('#main-stock input').val() == undefined || $('#main-stock input').val().trim() == '' ? 0 : parseInt($('#main-stock input').val().replaceAll(',', '')),
             label_id: $('#label-id select').find(':selected').val() == undefined || $('#label-id select').find(':selected').val().trim() == '' ? 0 : $('#label-id select').find(':selected').val(),
-            supplier_id: $('#supplier-id select').find(':selected').val() == undefined || $('#supplier-id select').find(':selected').val().trim() == '' ? 0 : $('#supplier-id select').find(':selected').val(),
 
         }
         model.images = []
@@ -1125,33 +1124,7 @@ var product_detail_new = {
         $('#group-id input').attr('data-id', group_selected)
 
     },
-    Select2Supplier: function (element) {
-        element.select2({
-            ajax: {
-                url: "/Supplier/SearchSupplier",
-                type: "post",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    var query = {
-                        txt_search: params.term,
-                    }
-                    return query;
-                },
-                processResults: function (response) {
-                    return {
-                        results: $.map(response.data, function (item) {
-                            return {
-                                text: ((item.supplierCode == null || item.supplierCode == undefined || item.supplierCode.trim() == '') ? '' : (item.supplierCode + ' - ')) + ' ' + item.fullName,
-                                id: item.supplierId,
-                            }
-                        })
-                    };
-                },
-                cache: true
-            }
-        });
-    },
+   
     Select2Label: function (element) {
         element.select2({
             ajax: {

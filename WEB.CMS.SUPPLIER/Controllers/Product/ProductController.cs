@@ -1,11 +1,13 @@
 ﻿using Caching.Elasticsearch;
 using Caching.RedisWorker;
 using Entities.Models;
+using Entities.ViewModels.Funding;
 using Entities.ViewModels.Products;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using Repositories.IRepositories;
+using System.Security.Claims;
 using System.Text;
 using Utilities;
 using Utilities.Contants;
@@ -218,7 +220,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 //-- Add / Update Sub product
                 if (request.variations != null && request.variations.Count > 0)
                 {
-                    product_main.status = (int)ProductStatus.ACTIVE;
+                    product_main.status = (int)ProductStatus.ON_WAITING_CONFIRM;
                     var amount_variations = request.variations.Select(x => x.amount);
                     product_main.amount_max = amount_variations.OrderByDescending(x => x).First();
                     product_main.amount_min = amount_variations.OrderBy(x => x).First();
@@ -237,7 +239,12 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     product_main.amount_min = null;
                 }
                 product_main.parent_product_id = "";
-               
+                string supplier_id = null;
+                if (HttpContext.User.FindFirst("SupplierId") != null)
+                {
+                    supplier_id = HttpContext.User.FindFirst("SupplierId").Value;
+                }
+                product_main.supplier_id = supplier_id!=null? Convert.ToInt32(supplier_id):null;
 
                 product_main.created_date = currentTimeInUtcPlus7;
                 product_main.updated_last = currentTimeInUtcPlus7;
@@ -245,7 +252,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 {
 
                     msg = "Thêm mới sản phẩm thành công";
-                    product_main.status = (int)ProductStatus.ACTIVE;
+                    product_main.status = (int)ProductStatus.ON_WAITING_CONFIRM;
                     rs = await _productV2DetailMongoAccess.AddNewAsync(product_main);
 
                 }
@@ -254,7 +261,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                    
                     var old_product = await _productV2DetailMongoAccess.GetByID(product_main._id);
                     rs = await _productV2DetailMongoAccess.UpdateAsync(product_main);
-                    await _productV2DetailMongoAccess.DeactiveByParentId(product_main._id);
+                    await _productV2DetailMongoAccess.RemoveSubProductByParentId(product_main._id);
                     //await _productV2DetailMongoAccess.DeleteInactiveByParentId(product_main._id);
                 }
 
@@ -265,7 +272,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     {
                         var product_by_variations = JsonConvert.DeserializeObject<ProductMongoDbModel>(JsonConvert.SerializeObject(request));
                         product_by_variations.variation_detail = variation.variation_attributes;
-                        product_by_variations.status = (int)ProductStatus.ACTIVE;
+                        product_by_variations.status = (int)ProductStatus.ON_WAITING_CONFIRM;
                         product_by_variations.parent_product_id = product_main._id;
                         product_by_variations.price = variation.price;
                         product_by_variations.profit = variation.profit;
@@ -279,6 +286,8 @@ namespace WEB.CMS.SUPPLIER.Controllers
                         product_by_variations.package_width = variation.package_width;
                         product_by_variations.created_date = currentTimeInUtcPlus7;
                         product_by_variations.updated_last = currentTimeInUtcPlus7;
+                        product_by_variations.supplier_id = supplier_id != null ? Convert.ToInt32(supplier_id) : null;
+                        product_by_variations.label_id = product_main.label_id;
                         if (variation._id != null && variation._id != "")
                         {
                             product_by_variations._id = variation._id;
@@ -472,7 +481,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     });
                 }
                 await _productV2DetailMongoAccess.Delete(product_id);
-                await _productV2DetailMongoAccess.DeactiveByParentId(product_id);
+                await _productV2DetailMongoAccess.RemoveSubProductByParentId(product_id);
 
                 return Ok(new
                 {
@@ -650,6 +659,23 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 ViewBag.ProductId = "";
                 ViewBag.Supplier = new Supplier();
                 ViewBag.Label = new Label();
+                string supplier_id = null;
+                if (HttpContext.User.FindFirst("SupplierId") != null)
+                {
+                    supplier_id = HttpContext.User.FindFirst("SupplierId").Value;
+                }
+                if (supplier_id != null && supplier_id .Trim()!="")
+                {
+                    ViewBag.Supplier = _supplierRepository.GetById(Convert.ToInt32(supplier_id));
+                }
+                else
+                {
+                    ViewBag.Supplier = new SupplierViewModel()
+                    {
+                        SupplierId = -1,
+                        FullName = "{Tài khoản chưa được liên kết với NCC, vui lòng liên hệ admin để thiết lập}"
+                    };
+                }
                 return View();
 
             }
@@ -681,6 +707,14 @@ namespace WEB.CMS.SUPPLIER.Controllers
             if (product != null && product.supplier_id != null && product.supplier_id>0)
             {
                 ViewBag.Supplier = _supplierRepository.GetById((int)product.supplier_id);
+            }
+            else
+            {
+                ViewBag.Supplier = new SupplierViewModel()
+                {
+                    SupplierId = -1,
+                    FullName = "{Tài khoản chưa được liên kết với NCC, vui lòng liên hệ admin để thiết lập}"
+                };
             }
             if (product != null && product.label_id != null && product.label_id > 0)
             {
@@ -822,6 +856,39 @@ namespace WEB.CMS.SUPPLIER.Controllers
             }
             return PartialView(products);
 
+        }
+        [HttpPost]
+        public async Task<IActionResult> Search(string keyword = "", int group_id = -1, int page_index = 1, int page_size = 10)
+        {
+
+            if (page_size <= 0) page_size = 10;
+            if (page_index < 1) page_index = 1;
+            Console.WriteLine($"Controller received keyword: '{keyword}'");
+
+            // Kiểm tra encoding
+            var bytes = System.Text.Encoding.UTF8.GetBytes(keyword);
+            Console.WriteLine($"Keyword bytes: {string.Join(",", bytes)}");
+
+            var normalizedKeyword = keyword.Normalize(NormalizationForm.FormC);
+            Console.WriteLine($"Normalized keyword: '{normalizedKeyword}'");
+
+            string supplier_id = null;
+            if (HttpContext.User.FindFirst("SupplierId") != null)
+            {
+                supplier_id = HttpContext.User.FindFirst("SupplierId").Value;
+            }
+
+            var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, page_index, page_size, (supplier_id != null ? Convert.ToInt32(supplier_id) : -1));
+            List<ProductMongoDbModel> sub_products = new List<ProductMongoDbModel>();
+            if (main_products != null && main_products.Count > 0)
+            {
+                sub_products = await _productV2DetailMongoAccess.ListSubListing(main_products.Select(x => x._id).ToList(), (supplier_id != null ? Convert.ToInt32(supplier_id) : -1));
+            }
+            ViewBag.Main = main_products;
+            ViewBag.Sub = sub_products;
+            string static_domain = _configuration["DomainConfig:ImageStatic"];
+            ViewBag.StaticDomain = static_domain != null && static_domain.EndsWith("/") ? static_domain : static_domain + "/";
+            return View();
         }
     }
     

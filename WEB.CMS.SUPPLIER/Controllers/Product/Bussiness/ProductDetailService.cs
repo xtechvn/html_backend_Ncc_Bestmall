@@ -161,7 +161,7 @@ namespace WEB.CMS.Controllers.Product.Bussiness
                             if (exists != null && exists._id != null)
                             {
                                 main_product._id = exists._id;
-                                await _productV2DetailMongoAccess.DeactiveByParentId(exists._id);
+                                await _productV2DetailMongoAccess.RemoveSubProductByParentId(exists._id);
                             }
                             else
                             {
@@ -179,7 +179,7 @@ namespace WEB.CMS.Controllers.Product.Bussiness
                         if(exists!=null && exists._id != null)
                         {
                             model._id = exists._id;
-                            await _productV2DetailMongoAccess.DeactiveByParentId(exists._id);
+                            await _productV2DetailMongoAccess.RemoveSubProductByParentId(exists._id);
 
                         }
                         else
