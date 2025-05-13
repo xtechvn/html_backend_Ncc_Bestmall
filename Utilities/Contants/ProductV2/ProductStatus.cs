@@ -10,6 +10,7 @@ namespace Utilities.Contants.ProductV2
     {
         ACTIVE=1,
         DEACTIVE=2,//ẩn fe
-        REMOVE=3 // ẩn fe vs cms
+        REMOVE=3, // ẩn fe vs cms
+        ON_WAITING_CONFIRM=4 // chờ duyệt
     }
 }

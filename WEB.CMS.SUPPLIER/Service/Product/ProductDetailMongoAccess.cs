@@ -17,7 +17,7 @@ namespace WEB.CMS.SUPPLIER.Models.Product
     {
         private readonly IConfiguration _configuration;
         private IMongoCollection<ProductMongoDbModel> _productDetailCollection;
-
+        List<int> status_sub = new List<int>() { (int)ProductStatus.ACTIVE, (int)ProductStatus.ON_WAITING_CONFIRM };
         public ProductDetailMongoAccess(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -106,7 +106,7 @@ namespace WEB.CMS.SUPPLIER.Models.Product
             }
         }
 
-        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1, int page_index = 1, int page_size = 10)
+        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1, int page_index = 1, int page_size = 10,int supplier_id=0)
         {
             try
             {
@@ -125,6 +125,8 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 {
                     filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
                 }
+                filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
+
                 var sort_filter = Builders<ProductMongoDbModel>.Sort;
                 var sort_filter_definition = sort_filter.Descending(x => x.updated_last);
                 var model = _productDetailCollection.Find(filter).Sort(sort_filter_definition);
@@ -155,7 +157,27 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 .ToLower()
                 .Trim();
         }
+        public async Task<List<ProductMongoDbModel>> ListSubListing(List<string> parents_id, int supplier_id = 0)
+        {
+            try
+            {
+                var filter = Builders<ProductMongoDbModel>.Filter;
+                var filterDefinition = filter.Empty;
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.parent_product_id, parents_id);
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.status, status_sub); 
 
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
+
+                var model = _productDetailCollection.Find(filterDefinition);
+                var result = await model.ToListAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - SubListing Error: " + ex);
+                return null;
+            }
+        }
         public async Task<List<ProductMongoDbModel>> SubListing(string parent_id)
         {
             try
@@ -163,7 +185,7 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 var filter = Builders<ProductMongoDbModel>.Filter;
                 var filterDefinition = filter.Empty;
                 filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.parent_product_id, parent_id);
-                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.status, (int)ProductStatus.ACTIVE); ;
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.status, status_sub); ;
 
                 var model = _productDetailCollection.Find(filterDefinition);
                 var result = await model.ToListAsync();
@@ -305,6 +327,25 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 Utilities.LogHelper.InsertLogTelegram("GetByNameAndSKU - GetByID Error: " + ex);
                 return null;
             }
+        }
+        public async Task<string> RemoveSubProductByParentId(string id)
+        {
+            try
+            {
+                var filter = Builders<ProductMongoDbModel>.Filter;
+                var filterDefinition = filter.Empty;
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.parent_product_id, id);
+                var update = Builders<ProductMongoDbModel>.Update.Set(x => x.status, (int)ProductStatus.REMOVE);
+
+                var updated_item = await _productDetailCollection.UpdateManyAsync(filterDefinition, update);
+                return id;
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - DeactiveByParentId Error: " + ex);
+            }
+            return null;
+
         }
     }
 }

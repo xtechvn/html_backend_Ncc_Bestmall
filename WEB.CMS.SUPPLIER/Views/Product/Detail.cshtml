@@ -235,8 +235,8 @@
                 <label class="label">Chọn nhà cung cấp</label>
                 <div class="wrap_input">
                     <div class="form-group namesp">
-                        <select class="select2 w-100">
-                            @if(supplier!=null && supplier.SupplierId > 0)
+                        <select class="select2 w-100" disabled>
+                            @if(supplier!=null)
                             {
                                 <option value="@supplier.SupplierId" selected>@supplier.FullName</option>
                             }
