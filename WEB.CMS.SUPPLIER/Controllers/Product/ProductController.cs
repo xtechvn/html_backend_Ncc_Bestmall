@@ -311,7 +311,8 @@ namespace WEB.CMS.SUPPLIER.Controllers
                         description=product_main.description,
                         name=product_main.name,
                         product_code=product_main.code,
-                        product_id=product_main._id
+                        product_id=product_main._id,
+                        product_name_no_tv = CommonHelper.RemoveSpecialCharacters(StringHelpers.RemoveUnicode(product_main.name).ToLower().Replace(" ", "").Trim())
                     };
                     await _productESRepository.InsertAsync(product_es);
                 }
