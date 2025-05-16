@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Utilities.Contants.ProductV2;
 using WEB.CMS.SUPPLIER.Models.Product;
 
-namespace WEB.CMS.Controllers.Product.Bussiness
+namespace WEB.CMS.SUPPLIER.Controllers.Product.Bussiness
 {
     public class ProductDetailService
     {

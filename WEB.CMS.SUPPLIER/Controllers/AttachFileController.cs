@@ -6,7 +6,7 @@ using Utilities.Contants;
 using Utilities;
 using WEB.CMS.SUPPLIER.Models;
 
-namespace WEB.CMS.Controllers
+namespace WEB.CMS.SUPPLIER.Controllers
 {
     public class AttachFileController : Controller
     {

@@ -8,7 +8,7 @@ using Utilities;
 using WEB.Adavigo.CMS.Service;
 using WEB.CMS.SUPPLIER.Customize;
 
-namespace WEB.CMS.Controllers
+namespace WEB.CMS.SUPPLIER.Controllers
 {
     [CustomAuthorize]
     public class DashBoardController : Controller

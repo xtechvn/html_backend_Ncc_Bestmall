@@ -7,9 +7,9 @@ using Repositories.IRepositories;
 using System.Security.Claims;
 using Utilities;
 using Utilities.Contants;
-using WEB.CMS.Controllers.Order.Bussiness;
+using WEB.CMS.SUPPLIER.Controllers.Order.Bussiness;
 
-namespace WEB.CMS.Controllers.Order
+namespace WEB.CMS.SUPPLIER.Controllers.Order
 {
     public class OrderManualController : Controller
     {

@@ -347,5 +347,31 @@ namespace WEB.CMS.SUPPLIER.Models.Product
             return null;
 
         }
+        public async Task UpdateProductAndChildrenStatus(string productId, int productStatus)
+        {
+            try
+            {
+                // Tạo filter để tìm sản phẩm có _id trùng với productId
+                var parentFilter = Builders<ProductMongoDbModel>.Filter.Eq(p => p._id, productId);
+
+                // Tạo update definition để cập nhật status
+                var updateDefinition = Builders<ProductMongoDbModel>.Update.Set(p => p.status, productStatus);
+
+                // Cập nhật trạng thái của sản phẩm cha
+                var updateParentResult = await _productDetailCollection.UpdateOneAsync(parentFilter, updateDefinition);
+
+
+                // Tạo filter để tìm tất cả sản phẩm có parent_product_id trùng với productId
+                var childrenFilter = Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, productId);
+                childrenFilter &= Builders<ProductMongoDbModel>.Filter.In(p => p.status, status_sub);
+                // Cập nhật trạng thái của tất cả sản phẩm con
+                var updateChildrenResult = await _productDetailCollection.UpdateManyAsync(childrenFilter, updateDefinition);
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - UpdateProductAndChildrenStatus Error: " + ex);
+            }
+        }
+
     }
 }

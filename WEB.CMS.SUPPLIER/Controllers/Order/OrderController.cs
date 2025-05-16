@@ -8,7 +8,7 @@ using Utilities;
 using Utilities.Contants;
 using WEB.CMS.SUPPLIER.Models.Product;
 
-namespace WEB.CMS.Controllers
+namespace WEB.CMS.SUPPLIER.Controllers
 {
 
     public class OrderController : Controller

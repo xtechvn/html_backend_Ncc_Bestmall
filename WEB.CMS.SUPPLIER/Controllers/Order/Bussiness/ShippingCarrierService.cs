@@ -3,7 +3,7 @@ using Caching.RedisWorker;
 using Entities.Models;
 using Utilities;
 
-namespace WEB.CMS.Controllers.Order.Bussiness
+namespace WEB.CMS.SUPPLIER.Controllers.Order.Bussiness
 {
     public class ShippingCarrierService
     {

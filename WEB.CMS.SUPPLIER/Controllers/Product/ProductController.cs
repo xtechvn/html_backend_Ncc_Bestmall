@@ -7,13 +7,12 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using Repositories.IRepositories;
-using System.Security.Claims;
 using System.Text;
 using Utilities;
 using Utilities.Contants;
 using Utilities.Contants.ProductV2;
 using WEB.Adavigo.CMS.Service;
-using WEB.CMS.Controllers.Product.Bussiness;
+using WEB.CMS.SUPPLIER.Controllers.Product.Bussiness;
 using WEB.CMS.SUPPLIER.Customize;
 using WEB.CMS.SUPPLIER.Models.Product;
 
@@ -890,6 +889,111 @@ namespace WEB.CMS.SUPPLIER.Controllers
             string static_domain = _configuration["DomainConfig:ImageStatic"];
             ViewBag.StaticDomain = static_domain != null && static_domain.EndsWith("/") ? static_domain : static_domain + "/";
             return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> ConfirmActiveProduct(string product_id)
+        {
+
+            try
+            {
+                if (product_id == null || product_id.Trim() == "")
+                {
+                    return Ok(new
+                    {
+                        is_success = false,
+                        msg = "ID sản phẩm không chính xác, vui lòng liên hệ admin"
+                    });
+                }
+                var updated = _productV2DetailMongoAccess.UpdateProductAndChildrenStatus(product_id, (int)ProductStatus.ACTIVE);
+                int db_index = Convert.ToInt32(_configuration["Redis:Database:db_search_result"]);
+                await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_LISTING, db_index);
+                await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_DETAIL + product_id, db_index);
+                return Ok(new
+                {
+                    is_success = true,
+                    msg = "Duyệt sản phẩm thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("ConfirmActiveProduct - ProductController: " + ex.ToString());
+                return Ok(new
+                {
+                    is_success = false,
+                    msg = "Lỗi trong quá trình xử lý, vui lòng liên hệ admin"
+                });
+            }
+
+        }
+        [HttpPost]
+        public async Task<IActionResult> ConfirmHideProduct(string product_id)
+        {
+
+            try
+            {
+                if (product_id == null || product_id.Trim() == "")
+                {
+                    return Ok(new
+                    {
+                        is_success = false,
+                        msg = "ID sản phẩm không chính xác, vui lòng liên hệ admin"
+                    });
+                }
+                var updated = _productV2DetailMongoAccess.UpdateProductAndChildrenStatus(product_id, (int)ProductStatus.DEACTIVE);
+                int db_index = Convert.ToInt32(_configuration["Redis:Database:db_search_result"]);
+                await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_LISTING, db_index);
+                await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_DETAIL + product_id, db_index);
+                return Ok(new
+                {
+                    is_success = true,
+                    msg = "Ẩn sản phẩm thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("ConfirmActiveProduct - ProductController: " + ex.ToString());
+                return Ok(new
+                {
+                    is_success = false,
+                    msg = "Lỗi trong quá trình xử lý, vui lòng liên hệ admin"
+                });
+            }
+
+        }
+        [HttpPost]
+        public async Task<IActionResult> ConfirmShowProduct(string product_id)
+        {
+
+            try
+            {
+                if (product_id == null || product_id.Trim() == "")
+                {
+                    return Ok(new
+                    {
+                        is_success = false,
+                        msg = "ID sản phẩm không chính xác, vui lòng liên hệ admin"
+                    });
+                }
+                var updated = _productV2DetailMongoAccess.UpdateProductAndChildrenStatus(product_id, (int)ProductStatus.ACTIVE);
+                int db_index = Convert.ToInt32(_configuration["Redis:Database:db_search_result"]);
+                await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_LISTING, db_index);
+                await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_DETAIL + product_id, db_index);
+                return Ok(new
+                {
+                    is_success = true,
+                    msg = "Hiển thị sản phẩm thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("ConfirmActiveProduct - ProductController: " + ex.ToString());
+                return Ok(new
+                {
+                    is_success = false,
+                    msg = "Lỗi trong quá trình xử lý, vui lòng liên hệ admin"
+                });
+            }
+
         }
     }
     

@@ -7,7 +7,7 @@ using System.Security.Claims;
 using Utilities;
 using WEB.CMS.SUPPLIER.Customize;
 
-namespace WEB.CMS.Controllers
+namespace WEB.CMS.SUPPLIER.Controllers
 {
     [CustomAuthorize]
     public class HomeController : Controller
