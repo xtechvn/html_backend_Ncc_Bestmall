@@ -2,6 +2,7 @@
 @using Entities.ViewModels.Label
 @using Entities.ViewModels.Products
 @using HuloToys_Service.Models.Label
+@using Utilities.Contants.ProductV2
 @{
     ViewData["Title"] = "Chi tiết sản phẩm";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -206,18 +207,7 @@
                     </div>
                 </div>
             </div>
-            <div id="description" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
-                <label class="label">Mô tả sản phẩm <sup class="red">*</sup></label>
-                <div class="wrap_input">
-                    <div class="form-group">
-                        <textarea rows="5" class="form-control" maxlength="3000">
-                            @(product != null && product.description != null && product.description.Trim() != "" ? product.description : "")
-
-                        </textarea>
-                        <p class="text-right mt-1"><nw class="count">@(product != null && product.description != null && product.description.Trim() != "" ? product.description.Length : "0")</nw>/3000</p>
-                    </div>
-                </div>
-            </div>
+           
             <div id="label-id" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
                 <label class="label">Chọn nhãn hiệu</label>
                 <div class="wrap_input">
@@ -235,8 +225,8 @@
                 <label class="label">Chọn nhà cung cấp</label>
                 <div class="wrap_input">
                     <div class="form-group namesp">
-                        <select class="select2 w-100" disabled>
-                            @if(supplier!=null)
+                        <select class="select2 w-100">
+                            @if(supplier!=null && supplier.SupplierId > 0)
                             {
                                 <option value="@supplier.SupplierId" selected>@supplier.FullName</option>
                             }
@@ -259,6 +249,58 @@
                     <div class="form-group namesp">
                         <input type="text" class="form-control input-price" placeholder="0" disabled value="@(product != null && product.discount>0 ? product.discount.ToString("N2"):"0")">
                         <span class="note">%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box-info bg-white p-3 mb-3">
+            <h5 class="title-box mb-2 text-uppercase">Mô tả</h5>
+            <div id="description" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
+                <label class="label">Mô tả chung <sup class="red">*</sup></label>
+                <div class="wrap_input">
+                    <div class="form-group">
+                        <textarea id="description-textarea" rows="5" class="form-control" maxlength="3000">
+                            @(product != null && product.description != null && product.description.Trim() != "" ? product.description : "")
+
+                        </textarea>
+                        @* <p class="text-right mt-1"><nw class="count">@(product != null && product.description != null && product.description.Trim() != "" ? product.description.Length : "0")</nw>/3000</p> *@
+                    </div>
+                </div>
+            </div>
+            <div id="description-ingredients" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
+                <label class="label">Thành phần <sup class="red">*</sup></label>
+                <div class="wrap_input">
+                    <div class="form-group">
+                        <textarea id="description-ingredients-textarea" rows="5" class="form-control" maxlength="3000">
+                            @(product != null && product.description_ingredients != null && product.description_ingredients.Trim() != "" ? product.description_ingredients : "")
+
+                        </textarea>
+                        @* <p class="text-right mt-1"><nw class="count">@(product != null && product.description_ingredients != null && product.description_ingredients.Trim() != "" ? product.description_ingredients.Length : "0")</nw>/3000</p> *@
+                    </div>
+                </div>
+            </div>
+            <div id="description-effect" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
+                <label class="label">Công dụng <sup class="red">*</sup></label>
+                <div class="wrap_input">
+                    <div class="form-group">
+                        <textarea id="description-effect-textarea" rows="5" class="form-control" maxlength="3000">
+                            @(product != null && product.description_effect != null && product.description_effect.Trim() != "" ? product.description_effect : "")
+
+                        </textarea>
+                        @* <p class="text-right mt-1"><nw class="count">@(product != null && product.description_effect != null && product.description_effect.Trim() != "" ? product.description_effect.Length : "0")</nw>/3000</p> *@
+                    </div>
+                </div>
+            </div>
+            <div id="description-usepolicy" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
+                <label class="label">Cách dùng<sup class="red">*</sup></label>
+                <div class="wrap_input">
+                    <div class="form-group">
+                        <textarea id="description-usepolicy-textarea" rows="5" class="form-control" maxlength="3000">
+                            @(product != null && product.description_usepolicy != null && product.description_usepolicy.Trim() != "" ? product.description_usepolicy : "")
+
+                        </textarea>
+                        @* <p class="text-right mt-1"><nw class="count">@(product != null && product.description_usepolicy != null && product.description_usepolicy.Trim() != "" ? product.description_usepolicy.Length : "0")</nw>/3000</p> *@
                     </div>
                 </div>
             </div>
@@ -1116,9 +1158,24 @@
         </div>
         <div class="action-form">
             <a id="product-detail-cancel" href="javascript:;" class="btn btn-round btn-outline-base btn-cancel">Hủy</a>
-            @*<a id="product-detail-hide" href="javascript:;" class="btn btn-round btn-outline-base btn-hide">Ẩn</a>*@
+            @if (product != null && (product.status == (int)ProductStatus.ACTIVE || product.status == (int)ProductStatus.ON_WAITING_CONFIRM))
+            {
+                <a id="product-detail-hide" href="javascript:;" class="btn btn-round btn-outline-base btn-hide">Ẩn</a>
+
+            }
+            @if (product != null && (product.status == (int)ProductStatus.DEACTIVE))
+            {
+                <a id="product-detail-show" href="javascript:;" class="btn btn-round btn-outline-base btn-hide">Hiện sản phẩm</a>
+
+            }
+            @if (product != null && product.status == (int)ProductStatus.ON_WAITING_CONFIRM)
+            {
+                <a id="product-detail-confirm-admin" href="javascript:;" class="btn btn-round btn-base btn-update">Duyệt sản phẩm</a>
+
+            }
             <a id="product-detail-delete" href="javascript:;" style="border-color:red; display:none; color:red" onclick="product_detail.Delete()" class="btn btn-round btn-outline-base btn-update">Ẩn</a>
             <a id="product-detail-confirm" href="javascript:;" class="btn btn-round btn-base btn-update">Cập nhật</a>
+            
         </div>
     </div>
 </section>
