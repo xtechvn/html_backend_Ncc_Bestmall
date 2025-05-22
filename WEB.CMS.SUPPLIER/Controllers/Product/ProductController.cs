@@ -260,7 +260,22 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 {
                    
                     var old_product = await _productV2DetailMongoAccess.GetByID(product_main._id);
-
+                    if(old_product!=null && old_product.total_sold != null)
+                    {
+                        if (old_product.total_sold != null)
+                        {
+                            product_main.total_sold = old_product.total_sold;
+                        }
+                        if (old_product.rating != null)
+                        {
+                            product_main.rating = old_product.rating;
+                        }
+                        if (old_product.review_count != null)
+                        {
+                            product_main.review_count = old_product.review_count;
+                        }
+                    }
+                    
                     rs = await _productV2DetailMongoAccess.UpdateAsync(product_main);
                     await _productV2DetailMongoAccess.RemoveSubProductByParentId(product_main._id);
                     //await _productV2DetailMongoAccess.DeleteInactiveByParentId(product_main._id);
