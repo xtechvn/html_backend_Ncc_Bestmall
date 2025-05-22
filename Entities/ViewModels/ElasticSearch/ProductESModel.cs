@@ -11,5 +11,5 @@ public class ProductESModel
    public string product_name_no_tv { get; set; }
    public string description { get; set; }
     public string avatar { get; set; }
-}
+
 }
