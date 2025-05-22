@@ -237,6 +237,8 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     product_main.amount_max = null;
                     product_main.amount_min = null;
                 }
+                product_main.status = (int)ProductStatus.ON_WAITING_CONFIRM;
+
                 product_main.parent_product_id = "";
                 string supplier_id = null;
                 if (HttpContext.User.FindFirst("SupplierId") != null)
@@ -251,7 +253,6 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 {
 
                     msg = "Thêm mới sản phẩm thành công";
-                    product_main.status = (int)ProductStatus.ON_WAITING_CONFIRM;
                     rs = await _productV2DetailMongoAccess.AddNewAsync(product_main);
 
                 }
@@ -259,6 +260,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 {
                    
                     var old_product = await _productV2DetailMongoAccess.GetByID(product_main._id);
+
                     rs = await _productV2DetailMongoAccess.UpdateAsync(product_main);
                     await _productV2DetailMongoAccess.RemoveSubProductByParentId(product_main._id);
                     //await _productV2DetailMongoAccess.DeleteInactiveByParentId(product_main._id);
