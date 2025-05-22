@@ -15,6 +15,7 @@ var product_detail_new = {
         product_detail_new.DynamicBind()
         product_detail_new.RenderAttributesPrice()
         product_detail_new.Select2Label($('#label-id select'))
+        product_detail_new.Select2Spec($('#description-specification-list select'))
         $('#specifications-list .spec-value').attr('readonly', 'readonly')
         _common.tinyMce('#description-textarea')
         _common.tinyMce('#description-ingredients-textarea')
@@ -416,6 +417,17 @@ var product_detail_new = {
             var element = $(this)
             product_detail_new.CalucateDiscount()
         });
+        $('body').on('click', '#description-specification .summary .btn-add', function (e) {
+            var template = _product_constants.HTML.ProductDetail_Description_Specification
+            var html = template
+            $(html).insertBefore('#description-specification .summary')
+            product_detail_new.Select2Spec($('#description-specification .tr-new select'))
+            $('#description-specification .tr-new').removeClass('tr-new')
+        });
+        $('body').on('click', '#description-specification table .delete-row', function () {
+            var element = $(this)
+            element.closest('tr').remove()
+        });
     },
     ShowProductTab: function () {
         $('#specification-disabled').hide()
@@ -800,6 +812,9 @@ var product_detail_new = {
             quanity_of_stock: $('#main-stock input').val() == undefined || $('#main-stock input').val().trim() == '' ? 0 : parseInt($('#main-stock input').val().replaceAll(',', '')),
             label_id: $('#label-id select').find(':selected').val() == undefined || $('#label-id select').find(':selected').val().trim() == '' ? 0 : $('#label-id select').find(':selected').val(),
             supplier_id: $('#supplier-id select').find(':selected').val() == undefined || $('#supplier-id select').find(':selected').val().trim() == '' ? 0 : $('#supplier-id select').find(':selected').val(),
+            review_count: $('#review-count input').val() == undefined || $('#review-count input').val().trim() == '' ? 0 : parseInt($('#review-count input').val().replaceAll(',', '')),
+            rating: $('#rating input').val() == undefined || $('#rating input').val().trim() == '' ? 0 : parseFloat($('#rating input').val().replaceAll(',', '')),
+            total_sold: $('#total-sold input').val() == undefined || $('#total-sold input').val().trim() == '' ? 0 : parseInt($('#total-sold input').val().replaceAll(',', '')),
 
         }
         model.images = []
@@ -881,21 +896,35 @@ var product_detail_new = {
         model.description_ingredients = tinymce.get('description-ingredients-textarea').getContent()
         model.description_effect = tinymce.get('description-effect-textarea').getContent()
         model.description_usepolicy = tinymce.get('description-usepolicy-textarea').getContent()
-        model.specification = []
-        $('#specifications .col-md-6').each(function (index, item) {
-            var element = $(this)
+        //model.specification = []
+        //$('#specifications .col-md-6').each(function (index, item) {
+        //    var element = $(this)
 
-            model.specification.push({
-                _id: '-1',
-                attribute_id: element.find('.item').attr('data-id'),
-                value_type: element.find('.item').attr('data-type'),
-                value: element.find('.item').find('.namesp').find('input').val(),
-                type_ids: element.find('.item').find('.namesp').find('input').attr('data-value'),
-            })
+        //    model.specification.push({
+        //        _id: '-1',
+        //        attribute_id: element.find('.item').attr('data-id'),
+        //        value_type: element.find('.item').attr('data-type'),
+        //        value: element.find('.item').find('.namesp').find('input').val(),
+        //        type_ids: element.find('.item').find('.namesp').find('input').attr('data-value'),
+        //    })
+
+        //})
+
+        model.detail_specification = []
+        $('#description-specification tbody tr').each(function (index, item) {
+            var element = $(this)
+            if (element.hasClass('summary')) { return true }
+            var selected_key = element.find('select').find(':selected')
+            var selected_value = element.find('input')
+            if (selected_key != null && selected_key != undefined) {
+                model.detail_specification.push({
+                    key: selected_key.val(),
+                    value:selected_value.val()
+                })
+            }
+           
 
         })
-
-
 
         model.discount_group_buy = []
         $('#discount-groupbuy tbody .discount-groupbuy-row').each(function (index, item) {
@@ -1161,7 +1190,6 @@ var product_detail_new = {
         $('#group-id input').attr('data-id', group_selected)
 
     },
-
     Select2Label: function (element) {
         element.select2({
             ajax: {
@@ -1188,6 +1216,37 @@ var product_detail_new = {
                 cache: true
             }
         });
+    },
+    Select2Spec: function (selector) {
+        selector.each(function (index, item) {
+            var element=$(this)
+            element.select2({
+                ajax: {
+                    url: "/product/SpecificationKeySearch",
+                    type: "post",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        var query = {
+                            txt_search: params.term,
+                        }
+                        return query;
+                    },
+                    processResults: function (response) {
+                        return {
+                            results: $.map(response.data, function (item) {
+                                return {
+                                    text: item.description,
+                                    id: item.description,
+                                }
+                            })
+                        };
+                    },
+                    cache: true
+                }
+            });
+        })
+       
     },
     ActiveProduct: function () {
         _global_function.AddLoading()

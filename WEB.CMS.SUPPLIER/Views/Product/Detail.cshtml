@@ -225,7 +225,7 @@
                 <label class="label">Chọn nhà cung cấp</label>
                 <div class="wrap_input">
                     <div class="form-group namesp">
-                        <select class="select2 w-100">
+                        <select class="select2 w-100" disabled>
                             @if(supplier!=null && supplier.SupplierId > 0)
                             {
                                 <option value="@supplier.SupplierId" selected>@supplier.FullName</option>
@@ -319,20 +319,19 @@
             <p class="mb-0">Có thể điều chỉnh sau khi chọn ngành hàng</p>
         </div>
 
-        <div id="specifications" class="box-info bg-white p-3 mb-3">
+      <div id="specifications" class="box-info bg-white p-3 mb-3">
             <h5 class="title-box mb-2 text-uppercase">Thông tin chi tiết</h5>
-            <p>
-@*                 Hoàn thành: <nw class="specification-finish">0</nw>/<nw class="specification-max">1</nw>
- *@                <span style="color: #919191" class="mx-2">
+            @* <p>
+               Hoàn thành: <nw class="specification-finish">0</nw>/<nw class="specification-max">1</nw>
+                 <span style="color: #919191" class="mx-2">
                     Điền thông tin thuộc tính để tăng mức độ hiển thị cho
                     sản
                     phẩm
                 </span>
                 <a href="javascript:;" class="text-primary" style="display:none;">Xem hướng dẫn bổ sung thuộc tính</a>
-            </p>
-            <div id="specifications-list" class="row specifications-list">
-               
-                <div class="col-md-6">
+            </p>    <div id="specifications-list" class="row specifications-list">
+
+            @*     <div class="col-md-6">
                     <div class="item flex flex-lg-nowrap gap10 mb-2 w-100" data-id="1" data-type="3">
                         <label class="label">Thương hiệu</label>
                         <div class="wrap_input">
@@ -677,10 +676,73 @@
                             <i class="icofont-simple-down"></i>
                         </span>
                     </a>
-                </div>
-            </div>
+            </div>*@
+            <div id="description-specification-list" class="row description-specification-list">
+                <div class="col-md-12">
+                    <div id="description-specification" class="item-edit item flex flex-lg-nowrap gap10 mb-2 w-100">
+                        <label class="label">Thông tin về sản phẩm</label>
+                        <div class="wrap_input pb-4">
+                            <div class="table-responsive  table-scroll">
+                                <table class="table w-100 text-center">
+                                    <thead>
+                                        <tr class="text-uppercase">
+                                            <th style=" width: 30%; ">Tên thông tin</th>
+                                            <th style=" width: 65%; ">Giá trị</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if(product!=null && product.detail_specification!=null && product.detail_specification.Count > 0)
+                                        {
+                                            foreach(var spec in product.detail_specification)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <div class="flex gap10 flex-nowrap align-items-center justify-content-center">
+                                                            <div class="form-group mb-0">
+                                                                <select class="select2 description-specification-key">
+                                                                    <option id="@spec.key" selected>@spec.key</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="flex gap10 flex-nowrap align-items-center justify-content-center">
+                                                            <div class="form-group mb-0">
+                                                                <input type="text" class="form-control description-specification-value" placeholder="Giá trị" value="@spec.value">
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <a href="javascript:;" class="delete-row">
+                                                            <i class="icofont-trash"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        <tr class="summary">
+                                            <td class="text-left">
+                                                <button class="btn btn-add">
+                                                    <i class="icofont-plus"></i>Thêm chi tiết
+                                                </button>
+                                            </td>
+                                            <td></td>
+                                            <td></td>
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> 
+            </div> 
+            </div> 
+
         </div>
-        <div id="selling-information" class="box-info bg-white p-3 mb-3">
+         <div id="selling-information" class="box-info bg-white p-3 mb-3">
             <h5 class="title-box mb-2 text-uppercase">Thông tin bán hàng</h5>
             <div class="row">
                 <div class="col-md-6">
@@ -1154,7 +1216,35 @@
                     </div>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div id="total-sold" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
+                            <label class="label">Số lượng sản phẩm đã bán</label>
+                            <div class="wrap_input">
+                                <div class="form-group namesp">
+                                <input type="text" class="form-control input-price" placeholder="0" value="@(product != null && product.total_sold!=null&& product.total_sold>0 ? ((int)product.total_sold).ToString("N0"):"0")">
+                                </div>
+                            </div>
+                    </div>
+                    <div id="rating" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
+                        <label class="label">Điểm Đánh giá sản phẩm</label>
+                        <div class="wrap_input">
+                            <div class="form-group namesp">
+                            <input type="text" class="form-control input-price" placeholder="0" value="@(product != null && product.rating!=null&& product.rating>0 ? ((int)product.rating).ToString("N1"):"0")">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="review-count" class="item flex flex-lg-nowrap gap10 mb-2 w-100">
+                        <label class="label">Số lượng đánh giá</label>
+                        <div class="wrap_input">
+                            <div class="form-group namesp">
+                            <input type="text" class="form-control input-price" placeholder="0" value="@(product != null && product.review_count!=null&& product.review_count>0 ? ((int)product.review_count).ToString("N0"):"0")">
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+            </div>
         </div>
         <div class="action-form">
             <a id="product-detail-cancel" href="javascript:;" class="btn btn-round btn-outline-base btn-cancel">Hủy</a>
