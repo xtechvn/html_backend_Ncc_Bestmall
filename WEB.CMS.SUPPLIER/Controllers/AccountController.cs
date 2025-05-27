@@ -228,7 +228,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     new Claim(ClaimTypes.NameIdentifier, model.Entity.Id.ToString()),
                     new Claim(ClaimTypes.Name, model.Entity.UserName),
                     new Claim("DepartmentId", (model.Entity.DepartmentId ?? 0).ToString()),
-                    new Claim(ClaimTypes.Email, model.Entity.Email),
+                    new Claim(ClaimTypes.Email, model.Entity.Email??""),
                     new Claim(ClaimTypes.Role, string.Join(",", model.RoleIdList)),
                     new Claim("SupplierId", string.Join(",", model.Entity.SupplierId == null || model.Entity.SupplierId <= 0 ? 0 : (int)model.Entity.SupplierId))
                 };
