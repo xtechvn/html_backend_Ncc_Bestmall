@@ -1061,7 +1061,9 @@ namespace WEB.CMS.SUPPLIER.Controllers
             {
                 supplier_id = HttpContext.User.FindFirst("SupplierId").Value;
             }
-            var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, 1, 10, (supplier_id != null ? Convert.ToInt32(supplier_id) : -1));
+            //var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, 1, 10, (supplier_id != null ? Convert.ToInt32(supplier_id) : -1));
+            var main_products = await _productV2DetailMongoAccess.ListingProductBuyWith(keyword, group_id, (supplier_id != null ? Convert.ToInt32(supplier_id) : -1));
+
             ViewBag.Main = main_products;
             return View();
         }
