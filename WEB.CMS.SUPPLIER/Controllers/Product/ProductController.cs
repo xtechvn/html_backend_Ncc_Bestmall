@@ -364,7 +364,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 //    }
                 //}
                 await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_LISTING, db_index);
-                await _redisConn.clear(CacheName.PRODUCT_DETAIL + product_main._id, db_index);
+                 _redisConn.clear(CacheName.PRODUCT_DETAIL + product_main._id, db_index);
                 if (rs != null)
                 {
                     return Ok(new
