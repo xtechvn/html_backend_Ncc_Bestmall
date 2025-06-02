@@ -1250,29 +1250,7 @@
 
             </div>
         </div>
-        <div class="action-form">
-            <a id="product-detail-cancel" href="javascript:;" class="btn btn-round btn-outline-base btn-cancel">Hủy</a>
-            @if (product != null && (product.status == (int)ProductStatus.ACTIVE || product.status == (int)ProductStatus.ON_WAITING_CONFIRM))
-            {
-                <a id="product-detail-hide" href="javascript:;" class="btn btn-round btn-outline-base btn-hide">Ẩn</a>
-
-            }
-            @if (product != null && (product.status == (int)ProductStatus.DEACTIVE))
-            {
-                <a id="product-detail-show" href="javascript:;" class="btn btn-round btn-outline-base btn-hide">Hiện sản phẩm</a>
-
-            }
-            @if (product != null && product.status == (int)ProductStatus.ON_WAITING_CONFIRM)
-            {
-                <a id="product-detail-confirm-admin" href="javascript:;" class="btn btn-round btn-base btn-update">Duyệt sản phẩm</a>
-
-            }
-            <a id="product-detail-delete" href="javascript:;" style="border-color:red; display:none; color:red" onclick="product_detail.Delete()" class="btn btn-round btn-outline-base btn-update">Ẩn</a>
-            <a id="product-detail-confirm" href="javascript:;" class="btn btn-round btn-base btn-update">Cập nhật</a>
-            
-        </div>
-    </div>
-    <div id="product-buy-with" class="box-info bg-white p-3 mb-3">
+        <div id="product-buy-with" class="box-info bg-white p-3 mb-3">
         <div class="item-edit item flex flex-lg-nowrap gap10 mb-2 w-100">
             <h5 class="title-box mb-2 text-uppercase">Sản phẩm mua cùng</h5>
             <div class="wrap_input pb-4">
@@ -1351,6 +1329,9 @@
                 </div>
             </div>
         </div>
+
+    </div>
+
         <div class="action-form">
             <a id="product-detail-cancel" href="javascript:;" class="btn btn-round btn-outline-base btn-cancel">Hủy</a>
             @if (product != null && (product.status == (int)ProductStatus.ACTIVE || product.status == (int)ProductStatus.ON_WAITING_CONFIRM))
@@ -1363,12 +1344,15 @@
                 <a id="product-detail-show" href="javascript:;" class="btn btn-round btn-outline-base btn-hide">Hiện sản phẩm</a>
 
             }
-           
+            @if (product != null && product.status == (int)ProductStatus.ON_WAITING_CONFIRM)
+            {
+                <a id="product-detail-confirm-admin" href="javascript:;" class="btn btn-round btn-base btn-update">Duyệt sản phẩm</a>
+
+            }
             <a id="product-detail-delete" href="javascript:;" style="border-color:red; display:none; color:red" onclick="product_detail.Delete()" class="btn btn-round btn-outline-base btn-update">Ẩn</a>
             <a id="product-detail-confirm" href="javascript:;" class="btn btn-round btn-base btn-update">Cập nhật</a>
-
+            
         </div>
-    </div>
 
 </section>
 
