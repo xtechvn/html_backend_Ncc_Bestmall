@@ -364,7 +364,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 //    }
                 //}
                 await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_LISTING, db_index);
-                await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_DETAIL + product_main._id, db_index);
+                await _redisConn.clear(CacheName.PRODUCT_DETAIL + product_main._id, db_index);
                 if (rs != null)
                 {
                     return Ok(new
@@ -687,6 +687,8 @@ namespace WEB.CMS.SUPPLIER.Controllers
         public async Task<IActionResult> Detail(string id = "")
         {
             ViewBag.Static = _configuration["API:StaticURL"];
+            ViewBag.ProductBuyWith = new List<ProductMongoDbModel>();
+
             if (id == null || id.Trim() == "")
             {
                 ViewBag.GroupProduct = "";
@@ -760,6 +762,14 @@ namespace WEB.CMS.SUPPLIER.Controllers
             ViewBag.Product = product;
             ViewBag.SubProduct = await _productV2DetailMongoAccess.SubListing(id);
             ViewBag.ProductId = id;
+            try
+            {
+                if (product != null && product.products_buy_with != null && product.products_buy_with.Count > 0)
+                {
+                    ViewBag.ProductBuyWith = await _productV2DetailMongoAccess.ListByProducts(product.products_buy_with);
+                }
+            }
+            catch { }
             return View();
         }
         public async Task<IActionResult> AttributesPrice(
@@ -940,7 +950,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                         msg = "ID sản phẩm không chính xác, vui lòng liên hệ admin"
                     });
                 }
-                var updated = _productV2DetailMongoAccess.UpdateProductAndChildrenStatus(product_id, (int)ProductStatus.ACTIVE);
+                var updated = _productV2DetailMongoAccess.UpdateProductAndChildrenStatus(product_id, (int)ProductStatus.ON_WAITING_CONFIRM);
                 int db_index = Convert.ToInt32(_configuration["Redis:Database:db_search_result"]);
                 await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_LISTING, db_index);
                 await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_DETAIL + product_id, db_index);
@@ -1010,7 +1020,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                         msg = "ID sản phẩm không chính xác, vui lòng liên hệ admin"
                     });
                 }
-                var updated = _productV2DetailMongoAccess.UpdateProductAndChildrenStatus(product_id, (int)ProductStatus.ACTIVE);
+                var updated = _productV2DetailMongoAccess.UpdateProductAndChildrenStatus(product_id, (int)ProductStatus.ON_WAITING_CONFIRM);
                 int db_index = Convert.ToInt32(_configuration["Redis:Database:db_search_result"]);
                 await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_LISTING, db_index);
                 await _redisConn.DeleteCacheByKeyword(CacheName.PRODUCT_DETAIL + product_id, db_index);
@@ -1030,6 +1040,43 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 });
             }
 
+        }
+        [HttpPost]
+
+        public IActionResult ProductBuyWith(string id = "")
+        {
+            ViewBag.ProductId = id;
+            return View();
+        }
+        [HttpPost]
+
+        public async Task<IActionResult> ProductBuyWithSearch(string keyword = "", int group_id = -1)
+        {
+            ViewBag.Main = new List<ProductMongoDbModel>();
+
+            string static_domain = _configuration["DomainConfig:ImageStatic"];
+            ViewBag.StaticDomain = static_domain != null && static_domain.EndsWith("/") ? static_domain : static_domain + "/";
+            string supplier_id = null;
+            if (HttpContext.User.FindFirst("SupplierId") != null)
+            {
+                supplier_id = HttpContext.User.FindFirst("SupplierId").Value;
+            }
+            var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, 1, 10, (supplier_id != null ? Convert.ToInt32(supplier_id) : -1));
+            ViewBag.Main = main_products;
+            return View();
+        }
+        [HttpPost]
+
+        public async Task<IActionResult> SearchGroupProduct(string keyword = "")
+        {
+            int parent_id = 1;
+            var list = _groupProductRepository.Search(keyword, parent_id);
+
+            return Ok(new
+            {
+                is_success = list != null && list.Count > 0,
+                data = list
+            });
         }
     }
     

@@ -509,6 +509,10 @@ namespace Repositories.Repositories
             }
             return null;
         }
+        public List<GroupProduct> Search(string keyword, int parent_id = 1)
+        {
+            return _GroupProductDAL.Search(keyword, parent_id);
+        }
 
 
     }
