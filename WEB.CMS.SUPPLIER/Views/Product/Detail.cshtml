@@ -4,6 +4,7 @@
 @using HuloToys_Service.Models.Label
 @using Utilities.Contants
 @using Utilities.Contants.ProductV2
+@using WEB.CMS.SUPPLIER.Service.Product
 @{
     ViewData["Title"] = "Chi tiết sản phẩm";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -1310,6 +1311,8 @@
                                     var img_src = item.avatar;
                                     if (img_src != null && !img_src.Contains(static_url) && !img_src.Contains("data:image") && !img_src.Contains("http"))
                                         img_src = static_url + item.avatar;
+                                    var variation_string = ProductVariationHelper.RenderVariationDetail(item.attributes, item.attributes_detail, item.variation_detail);
+
                                     <tr data-id="@item._id">
                                         <td style="max-width: 50px">
                                             <label class="check-list mb20 mr25">
