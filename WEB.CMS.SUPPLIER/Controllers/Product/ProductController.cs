@@ -338,7 +338,9 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     product_code = product_main.code,
                     product_id = product_main._id,
                     product_name_no_tv = CommonHelper.RemoveSpecialCharacters(StringHelpers.RemoveUnicode(product_main.name).ToLower().Replace(" ", "").Trim()),
-                    avatar = product_main.avatar
+                    avatar = product_main.avatar,
+                    status = product_main.status,
+                    supplier_status = product_main.supplier_status
                 };
                 await _productESRepository.InsertAsync(product_es);
 
