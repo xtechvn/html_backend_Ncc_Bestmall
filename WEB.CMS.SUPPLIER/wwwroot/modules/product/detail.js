@@ -1053,6 +1053,7 @@ var product_detail_new = {
 
                     variation.variation_attributes.push({
                         id: i,
+                        _id: i,
                         name: attr_value
                     })
                 }
