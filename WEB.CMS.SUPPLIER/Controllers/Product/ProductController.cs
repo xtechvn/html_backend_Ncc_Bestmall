@@ -299,6 +299,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                         var product_by_variations = JsonConvert.DeserializeObject<ProductMongoDbModel>(JsonConvert.SerializeObject(request));
                         product_by_variations.variation_detail = variation.variation_attributes;
                         product_by_variations.status = (int)ProductStatus.ON_WAITING_CONFIRM;
+                        product_by_variations.supplier_status = product_main.supplier_status;
                         product_by_variations.parent_product_id = product_main._id;
                         product_by_variations.price = variation.price;
                         product_by_variations.profit = variation.profit;
