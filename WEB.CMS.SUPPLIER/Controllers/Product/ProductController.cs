@@ -232,6 +232,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     product_main.package_height = request.package_height;
                     product_main.package_depth = request.package_depth;
 
+                    product_main.amount = 0;
 
                 }
                 else
