@@ -34,4 +34,8 @@ public partial class GroupProduct
     public bool IsShowFooter { get; set; }
 
     public string Code { get; set; }
+
+    public long? ProductCount { get; set; }
+
+    public bool? IsFlashSale { get; set; }
 }

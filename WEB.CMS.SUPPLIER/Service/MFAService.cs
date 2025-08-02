@@ -10,6 +10,7 @@ using Utilities.Common;
 using System.Text.RegularExpressions;
 using Entities.ViewModels.Login;
 using Newtonsoft.Json;
+using WEB.CMS.Models;
 using WEB.CMS.SUPPLIER.Models;
 
 namespace Utilities
@@ -198,12 +199,12 @@ namespace Utilities
                 Mfauser new_mfa_record = new Mfauser()
                 {
                     UserId = client_detail.Entity.Id,
-                    Email = client_detail.Entity.Email.Trim(),
+                    Email = client_detail.Entity.Email==null?"": client_detail.Entity.Email.Trim(),
                     Username = client_detail.Entity.UserName.Trim(),
                     SecretKey = "",
                     Status = 0,
                     BackupCode = "",
-                    UserCreatedYear = client_detail.Entity.CreatedOn.Value.Year.ToString()
+                    UserCreatedYear = client_detail.Entity.CreatedOn==null?DateTime.Now.Year.ToString(): client_detail.Entity.CreatedOn.Value.Year.ToString()
                 };
                 string secret_key = GenerateSecretKey(client_detail);
                 if (secret_key == null)
@@ -236,7 +237,7 @@ namespace Utilities
                 string SecretKey = "";
                 string random_int_begin = new Random().Next(0, 99999999).ToString(new string('0', 8));
                 string random_int_last = new Random().Next(0, 99999999).ToString(new string('0', 8));
-                // 12345678_55_minh.nq_11111111_minhnguyen@Adavigo.vn
+                // 12345678_55_minh.nq_11111111_minhnguyen@BestMall.vn
                 string base_text = random_int_begin.Trim() + "_" + client_detail.Entity.Id + "_" + client_detail.Entity.UserName.Trim() + "_" + random_int_last.Trim() + "_" + client_detail.Entity.Email.Trim();
                 byte[] base_text_in_bytes = System.Text.Encoding.ASCII.GetBytes(base_text);
                 byte[] hash_text_sha256 = sHA256.ComputeHash(base_text_in_bytes);
@@ -251,7 +252,7 @@ namespace Utilities
                 return null;
             }
         }
-        public static string GenerateQRCode(Mfauser result,string otpEnviroment) 
+        public static string GenerateQRCode(Mfauser result,string otpEnviroment,string provider) 
         {
             try
             {
@@ -259,10 +260,10 @@ namespace Utilities
                 {
                     string enviroment = otpEnviroment;
                     if (enviroment == null) enviroment = "";
-                    string label_name = "AdavigoCMS_" + enviroment + "-" + result.Username.Trim();
-                    //string label_name = "qc-be-Adavigo.com:" + enviroment + "-" + result.Username.Trim();
+                    string label_name = "BestMall_" + enviroment + "-" + result.Username.Trim();
+                    //string label_name = "qc-be-BestMall.com:" + enviroment + "-" + result.Username.Trim();
                     string secret_key = result.SecretKey.Trim();
-                    string issuer = "Adavigo";
+                    string issuer = provider;
                     string otp_auth_url = @"" + "otpauth://totp/" + issuer + ":" + label_name + "?secret=" + secret_key + "&issuer=" + issuer + "";
                     return otp_auth_url;
                 }

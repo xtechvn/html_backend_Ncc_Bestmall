@@ -1,7 +1,7 @@
 ﻿using Entities.ViewModels.Products;
 using System.Text;
 
-namespace WEB.CMS.SUPPLIER.Service.Product
+namespace WEB.CMS.Service.Product
 {
     public static class ProductVariationHelper
     {

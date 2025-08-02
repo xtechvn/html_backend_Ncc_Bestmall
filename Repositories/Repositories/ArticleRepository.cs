@@ -1,5 +1,6 @@
 ﻿using DAL;
 using Entities.ConfigModels;
+using Entities.Models;
 using Entities.ViewModels;
 using Microsoft.Extensions.Options;
 using Repositories.IRepositories;
@@ -129,6 +130,34 @@ namespace Repositories.Repositories
         {
             return _TagDAL.GetSuggestionTag(name);
         }
+        public async Task SaveFanpageImagesAsync(long articleId, List<string> images)
+        {
+
+            var processedImages = new List<string>();
+
+            foreach (var image in images)
+            {
+                var url = await UpLoadHelper.UploadBase64Src(image, _UrlStaticImage);
+                // ✅ Nếu URL trả về KHÔNG chứa static domain thì gắn vào
+                if (!string.IsNullOrEmpty(url) && !url.Contains(_UrlStaticImage))
+                {
+                    url = _UrlStaticImage + url;
+                }
+                if (!string.IsNullOrEmpty(url))
+                {
+                    processedImages.Add(url);
+                }
+            }
+
+            await _ArticleDAL.SaveFanpageImagesAsync(articleId, processedImages);
+        }
+
+
+        public async Task<List<string>> GetFanpageImagesAsync(long articleId)
+        {
+            return await _ArticleDAL.GetFanpageImagesAsync(articleId);
+        }
+
 
         public async Task<long> SaveArticle(ArticleModel model)
         {
@@ -190,21 +219,18 @@ namespace Repositories.Repositories
 
                 if (ArticleId > 0)
                 {
-                    if (ArticleId > 0)
-                    {
-                        #region upsert Tags
-                        var ListTagId = await _TagDAL.MultipleInsertTag(model.Tags);
-                        await _ArticleDAL.MultipleInsertArticleTag(ArticleId, ListTagId);
-                        #endregion
+                    #region upsert Tags
+                    var ListTagId = await _TagDAL.MultipleInsertTag(model.Tags);
+                    await _ArticleDAL.MultipleInsertArticleTag(ArticleId, ListTagId);
+                    #endregion
 
-                        #region upsert Categories
-                        await _ArticleDAL.MultipleInsertArticleCategory(ArticleId, model.Categories);
-                        #endregion
+                    #region upsert Categories
+                    await _ArticleDAL.MultipleInsertArticleCategory(ArticleId, model.Categories);
+                    #endregion
 
-                        #region upsert Relation Article
-                        await _ArticleDAL.MultipleInsertArticleRelation(ArticleId, model.RelatedArticleIds);
-                        #endregion
-                    }
+                    #region upsert Relation Article
+                    await _ArticleDAL.MultipleInsertArticleRelation(ArticleId, model.RelatedArticleIds);
+                    #endregion
                 }
 
                 return ArticleId;
@@ -315,7 +341,10 @@ namespace Repositories.Repositories
         {
             return await _ArticleDAL.getPinnedArticleByPostition(cate_id, category_name, position);
         }
-
+        public async Task<ArticleCategory> FindCategoryByArticleIdAndCategoryId(long ArticleId, int category_id)
+        {
+            return await _ArticleDAL.FindCategoryByArticleIdAndCategoryId(ArticleId,category_id);
+        }
     }
 }
 

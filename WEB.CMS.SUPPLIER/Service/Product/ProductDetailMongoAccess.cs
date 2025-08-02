@@ -1,5 +1,9 @@
 ﻿using Azure.Core;
+using Elasticsearch.Net;
+using Entities.Models;
 using Entities.ViewModels.Products;
+using IdGen;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Nest;
 using Newtonsoft.Json;
@@ -11,13 +15,14 @@ using Utilities;
 using Utilities.Contants;
 using Utilities.Contants.ProductV2;
 
-namespace WEB.CMS.SUPPLIER.Models.Product
+namespace WEB.CMS.Models.Product
 {
     public class ProductDetailMongoAccess
     {
         private readonly IConfiguration _configuration;
         private IMongoCollection<ProductMongoDbModel> _productDetailCollection;
-        List<int> status_sub = new List<int>() { (int)ProductStatus.ACTIVE, (int)ProductStatus.ON_WAITING_CONFIRM };
+        List<int> status_sub = new List<int>() { (int)ProductStatus.ACTIVE, (int)ProductStatus.DEACTIVE, (int)ProductStatus.ON_WAITING_CONFIRM };
+
         public ProductDetailMongoAccess(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -106,7 +111,7 @@ namespace WEB.CMS.SUPPLIER.Models.Product
             }
         }
 
-        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1, int page_index = 1, int page_size = 10,int supplier_id=0)
+        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1,int status=-1, int page_index = 1, int page_size = 10,bool export_all=false,int SupplierId=0)
         {
             try
             {
@@ -120,18 +125,71 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                     Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
                     Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
                 );
-                filter &= Builders<ProductMongoDbModel>.Filter.Where(s => s.status != (int)ProductStatus.REMOVE);
+                filter &= Builders<ProductMongoDbModel>.Filter.Ne(s => s.status ,(int)ProductStatus.REMOVE);
                 if (group_id > 0)
                 {
-                    filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
-                }
-                filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
+                    filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, new BsonRegularExpression($@"\b{group_id}\b"));
 
+                }
+                if (SupplierId > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, SupplierId);
+
+                }
+                if (status > 0)
+                {
+                    switch (status)
+                    {
+                        case (int)ProductStatus.ON_WAITING_CONFIRM:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.status, (int)ProductStatus.ON_WAITING_CONFIRM),
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.supplier_status, (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION)
+                                );
+                            }
+                            break;
+                        case (int)ProductStatus.ACTIVE:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.And(
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.status, (int)ProductStatus.ACTIVE),
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
+                                );
+                            }
+                            break;
+                        case (int)ProductStatus.DEACTIVE:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.And(
+                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ACTIVE),
+                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
+                               );
+                                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ON_WAITING_CONFIRM),
+                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION)
+                              );
+                            }
+                            break;
+                        default:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.status, status);
+                            }
+                            break;
+                    }
+                   
+                }
                 var sort_filter = Builders<ProductMongoDbModel>.Sort;
                 var sort_filter_definition = sort_filter.Descending(x => x.updated_last);
                 var model = _productDetailCollection.Find(filter).Sort(sort_filter_definition);
-                model.Options.Skip = page_index < 1 ? 0 : (page_index - 1) * page_size;
-                model.Options.Limit = page_size;
+                if (page_size > 0 && page_index > 0)
+                {
+                    model.Options.Skip = page_index < 1 ? 0 : (page_index - 1) * page_size;
+                    model.Options.Limit = page_size;
+                }
+                else if(export_all==false) 
+                {
+                
+                    model.Options.Skip = 0;
+                    model.Options.Limit = 10;
+                }
                 //// Retrieve products from MongoDB
                 //var result1 = await _productDetailCollection.Find(filterDefinition).Sort(sort_filter_definition).ToListAsync();
 
@@ -149,6 +207,77 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 return null;
             }
         }
+        public async Task<long> CountListing(string keyword = "", int group_id = -1, int status = -1)
+        {
+            try
+            {
+                var filter = Builders<ProductMongoDbModel>.Filter.Or(
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i"))
+
+                                    );
+                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
+                );
+                filter &= Builders<ProductMongoDbModel>.Filter.Ne(s => s.status, (int)ProductStatus.REMOVE);
+                if (group_id > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, new BsonRegularExpression($@"\b{group_id}\b"));
+
+                }
+                if (status > 0)
+                {
+                    switch (status)
+                    {
+                        case (int)ProductStatus.ON_WAITING_CONFIRM:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.status, (int)ProductStatus.ON_WAITING_CONFIRM),
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.supplier_status, (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION)
+                                );
+                            }
+                            break;
+                        case (int)ProductStatus.ACTIVE:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.And(
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.status, (int)ProductStatus.ACTIVE),
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
+                                );
+                            }
+                            break;
+                        case (int)ProductStatus.DEACTIVE:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.And(
+                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ACTIVE),
+                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
+                               );
+                                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ON_WAITING_CONFIRM),
+                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION)
+                              );
+                            }
+                            break;
+                        default:
+                            {
+                                filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.status, status);
+                            }
+                            break;
+                    }
+
+                }
+                var model = await _productDetailCollection.CountDocumentsAsync(filter);
+                
+                return model;
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - Listing Error: " + ex);
+                return 0;
+            }
+        }
+
         // Hàm chuẩn hóa từ khóa tìm kiếm, giữ lại dấu ngoặc và các ký tự cần thiết
         private string NormalizeTextForSearch(string input)
         {
@@ -157,16 +286,14 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 .ToLower()
                 .Trim();
         }
-        public async Task<List<ProductMongoDbModel>> ListSubListing(List<string> parents_id, int supplier_id = 0)
+        public async Task<List<ProductMongoDbModel>> ListSubListing(List<string> parents_id)
         {
             try
             {
                 var filter = Builders<ProductMongoDbModel>.Filter;
                 var filterDefinition = filter.Empty;
                 filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.parent_product_id, parents_id);
-                filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.status, status_sub); 
-
-                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.status, (int)ProductStatus.ACTIVE); ;
 
                 var model = _productDetailCollection.Find(filterDefinition);
                 var result = await model.ToListAsync();
@@ -185,7 +312,7 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 var filter = Builders<ProductMongoDbModel>.Filter;
                 var filterDefinition = filter.Empty;
                 filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.parent_product_id, parent_id);
-                filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.status, status_sub); ;
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.status, status_sub);
 
                 var model = _productDetailCollection.Find(filterDefinition);
                 var result = await model.ToListAsync();
@@ -203,7 +330,7 @@ namespace WEB.CMS.SUPPLIER.Models.Product
             {
                 var filter = Builders<ProductMongoDbModel>.Filter;
                 var filterDefinition = filter.Empty;
-                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.status, (int)ProductStatus.ACTIVE); ;
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.status, status_sub);
                 filterDefinition &= Builders<ProductMongoDbModel>.Filter.In(x => x.parent_product_id, parent_id);
 
                 var model = _productDetailCollection.Find(filterDefinition);
@@ -225,6 +352,25 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 var filterDefinition = filter.Empty;
                 filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.parent_product_id, id);
                 var update = Builders<ProductMongoDbModel>.Update.Set(x => x.status, (int)ProductStatus.DEACTIVE);
+
+                var updated_item = await _productDetailCollection.UpdateManyAsync(filterDefinition, update);
+                return id;
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - DeactiveByParentId Error: " + ex);
+            }
+            return null;
+
+        }
+        public async Task<string> RemoveSubProductByParentId(string id)
+        {
+            try
+            {
+                var filter = Builders<ProductMongoDbModel>.Filter;
+                var filterDefinition = filter.Empty;
+                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.parent_product_id, id);
+                var update = Builders<ProductMongoDbModel>.Update.Set(x => x.status, (int)ProductStatus.REMOVE);
 
                 var updated_item = await _productDetailCollection.UpdateManyAsync(filterDefinition, update);
                 return id;
@@ -328,25 +474,6 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 return null;
             }
         }
-        public async Task<string> RemoveSubProductByParentId(string id)
-        {
-            try
-            {
-                var filter = Builders<ProductMongoDbModel>.Filter;
-                var filterDefinition = filter.Empty;
-                filterDefinition &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.parent_product_id, id);
-                var update = Builders<ProductMongoDbModel>.Update.Set(x => x.status, (int)ProductStatus.REMOVE);
-
-                var updated_item = await _productDetailCollection.UpdateManyAsync(filterDefinition, update);
-                return id;
-            }
-            catch (Exception ex)
-            {
-                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - DeactiveByParentId Error: " + ex);
-            }
-            return null;
-
-        }
         public async Task UpdateProductAndChildrenStatus(string productId, int productStatus)
         {
             try
@@ -372,6 +499,30 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - UpdateProductAndChildrenStatus Error: " + ex);
             }
         }
+        public async Task<bool> UpdateStatusBySupplierId(int supplierId, int newStatus)
+        {
+            try
+            {
+                var filter = Builders<ProductMongoDbModel>.Filter;
+                // Create a filter to match documents by supplier_id
+                var filterDefinition = filter.Eq(x => x.supplier_id, supplierId);
+                var update = Builders<ProductMongoDbModel>.Update;
+                // Create an update definition to set the new status
+                var updateDefinition = update.Set(x => x.supplier_status, newStatus);
+
+                // Execute the update operation for multiple documents
+                var result = await _productDetailCollection.UpdateManyAsync(filterDefinition, updateDefinition);
+
+                // Check if any documents were modified
+                return result.IsAcknowledged && result.ModifiedCount > 0;
+            }
+            catch (Exception ex)
+            {
+                // Log the error using your utility helper
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - UpdateStatusBySupplierId Error: " + ex);
+                return false;
+            }
+        }
         public async Task<List<ProductMongoDbModel>> ListByProducts(List<string> ids)
         {
             try
@@ -390,22 +541,37 @@ namespace WEB.CMS.SUPPLIER.Models.Product
                 return null;
             }
         }
-        public async Task<List<ProductMongoDbModel>> ListingProductBuyWith(string keyword = "", int group_id = -1, int supplier_id = 0)
+        public async Task<List<ProductMongoDbModel>> ListingProductBuyWith(string keyword = "", int group_id = -1, List<string>? current_id = null,int supplier_id=0)
         {
             try
             {
-                var filter = Builders<ProductMongoDbModel>.Filter.Or(
+                var filter_general = Builders<ProductMongoDbModel>.Filter.Or(
                                     Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
                                     Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
                                     Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i"))
 
                                     );
 
-                filter &= Builders<ProductMongoDbModel>.Filter.Where(s => s.status != (int)ProductStatus.REMOVE);
+                filter_general &= Builders<ProductMongoDbModel>.Filter.Eq(s => s.status, (int)ProductStatus.ACTIVE);
+                filter_general &= Builders<ProductMongoDbModel>.Filter.Eq(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED);
+                filter_general &= Builders<ProductMongoDbModel>.Filter.Ne(p => p.price, 0);
+                filter_general &= Builders<ProductMongoDbModel>.Filter.Ne(p => p.amount, 0);
+                if (supplier_id > 0)
+                {
+                    filter_general &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
+
+                }
                 if (group_id > 0)
                 {
-                    filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
+                    filter_general &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
                 }
+                if (current_id != null && current_id.Count > 0)
+                {
+                    filter_general &= Builders<ProductMongoDbModel>.Filter.Nin(p => p._id, current_id);
+                    filter_general &= Builders<ProductMongoDbModel>.Filter.Nin(p => p.parent_product_id, current_id);
+
+                }
+
                 // Điều kiện cho Trường hợp 1: parent_product_id là null hoặc rỗng, VÀ không có variation_detail
                 var condition1_ParentIdNullOrEmpty = Builders<ProductMongoDbModel>.Filter.Or(
                     Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
@@ -423,7 +589,8 @@ namespace WEB.CMS.SUPPLIER.Models.Product
 
                 var case1Filter = Builders<ProductMongoDbModel>.Filter.And(
                     condition1_ParentIdNullOrEmpty,
-                    condition1_NoVariationDetail
+                    condition1_NoVariationDetail,
+                    filter_general
                 );
 
                 // Điều kiện cho Trường hợp 2: Có parent_product_id VÀ cũng có variation_detail
@@ -441,17 +608,16 @@ namespace WEB.CMS.SUPPLIER.Models.Product
 
                 var case2Filter = Builders<ProductMongoDbModel>.Filter.And(
                     condition2_HasParentId,
-                    condition2_HasVariationDetail
+                    condition2_HasVariationDetail,
+                     filter_general
                 );
 
                 // Kết hợp hai trường hợp bằng toán tử OR
-                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+               var filter = Builders<ProductMongoDbModel>.Filter.Or(
                     case1Filter,
                     case2Filter
                 );
-                filter &= Builders<ProductMongoDbModel>.Filter.Gt(p => p.amount, 0);
-                filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
-
+                
                 var sort_filter = Builders<ProductMongoDbModel>.Sort;
                 var sort_filter_definition = sort_filter.Descending(x => x.updated_last);
                 var model = _productDetailCollection.Find(filter).Sort(sort_filter_definition);
@@ -467,5 +633,112 @@ namespace WEB.CMS.SUPPLIER.Models.Product
             }
         }
 
+        public async Task<List<ProductMongoDbModel>> ListingProductFlashSale(string keyword = "", int group_id = -1, int supplier_id = -1)
+        {
+            try
+            {
+                var filter = Builders<ProductMongoDbModel>.Filter.Or(
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i"))
+
+                                    );
+
+                filter &= Builders<ProductMongoDbModel>.Filter.Where(s => s.status != (int)ProductStatus.REMOVE);
+                if (group_id > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
+                }
+                if (supplier_id > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
+                }
+                // chỉ lấy sản phẩm chính
+                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
+                );
+                var sort_filter = Builders<ProductMongoDbModel>.Sort;
+                var sort_filter_definition = sort_filter.Descending(x => x.updated_last);
+                var model = _productDetailCollection.Find(filter).Sort(sort_filter_definition);
+                model.Options.Skip = 0;
+                model.Options.Limit = 10;
+                var result = await model.ToListAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - Listing Error: " + ex);
+                return null;
+            }
+        }
+        public async Task<long> CountByGroupId(int group_id)
+        {
+            try
+            {
+                var filterDefinition = Builders<ProductMongoDbModel>.Filter;
+                var filter = filterDefinition.Empty;
+                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
+                );
+                filter &= Builders<ProductMongoDbModel>.Filter.Where(s => s.status != (int)ProductStatus.REMOVE);
+                if (group_id > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
+                }
+
+                return await _productDetailCollection.CountDocumentsAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - CountByGroupId Error: " + ex);
+            }
+            return 0;
+        }
+
+		public async Task<long> GetCountProducts()
+        {
+            try
+            {
+                var filterDefinition = Builders<ProductMongoDbModel>.Filter;
+                var filter = filterDefinition.Empty;
+                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
+                );
+                filter &= Builders<ProductMongoDbModel>.Filter.Where(s => s.status != (int)ProductStatus.REMOVE);
+
+
+                return await _productDetailCollection.CountDocumentsAsync(filter);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting products: {ex.Message}");
+                return 0;
+            }
+        }
+        public async Task<List<ProductMongoDbModel>> GetBySupplierId(int supplier_id)
+        {
+            try
+            {
+                var filterDefinition = Builders<ProductMongoDbModel>.Filter;
+                var filter = filterDefinition.Empty;
+                filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
+                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
+                );
+                filter &= Builders<ProductMongoDbModel>.Filter.Where(s => s.status != (int)ProductStatus.REMOVE);
+                filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
+
+
+                return await _productDetailCollection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogHelper.InsertLogTelegram("ProductDetailMongoAccess - GetBySupplierId Error: " + ex);
+            }
+            return null;
+        }
     }
 }

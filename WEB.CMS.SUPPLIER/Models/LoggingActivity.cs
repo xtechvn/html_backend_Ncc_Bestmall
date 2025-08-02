@@ -1,15 +1,6 @@
 ﻿using Entities.ViewModels.Log;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Utilities;
-using Utilities.Contants;
-using WEB.CMS.SUPPLIER.Models;
-using WEB.CMS.SUPPLIER.Service.Log;
+using WEB.CMS.Service.Log;
 
 namespace WEB.CMS.SUPPLIER.Common
 {

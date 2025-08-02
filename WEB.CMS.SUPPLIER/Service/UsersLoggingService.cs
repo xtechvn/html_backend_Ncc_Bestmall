@@ -3,7 +3,7 @@ using MongoDB.Driver;
 using Utilities;
 using Utilities.Contants;
 
-namespace WEB.CMS.SUPPLIER.Service.Log
+namespace WEB.CMS.Service.Log
 {
     public static class UsersLoggingService
     {

@@ -3,9 +3,9 @@ using Repositories.IRepositories;
 using System.Text;
 using Utilities;
 using Utilities.ViewModels.Article;
-using WEB.CMS.SUPPLIER.Models;
+using WEB.CMS.Models;
 
-namespace WEB.Adavigo.CMS.Service
+namespace WEB.BestMall.CMS.Service
 {
     public class StaticAPIService
     {

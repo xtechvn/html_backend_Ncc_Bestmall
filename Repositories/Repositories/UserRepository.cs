@@ -3,8 +3,10 @@ using Entities.ConfigModels;
 using Entities.Models;
 using Entities.ViewModels;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nest;
 using Repositories.IRepositories;
 using Repositories.Repositories.BaseRepos;
 using System;
@@ -47,8 +49,8 @@ namespace Repositories.Repositories
             try
             {
                 var _encryptPassword = EncodeHelpers.MD5Hash(entity.Password);
-                var _model = await _UserDAL.GetByUserName(entity.UserName);
-                if (_model != null && _model.Password!=null && _encryptPassword.Trim() == _model.Password.Trim())
+                var _model = await _UserDAL.GetByUserNameCMSCore(entity.UserName);
+                if (_model != null && _model.Password != null && _encryptPassword.Trim() == _model.Password.Trim())
                 {
                     return await GetDetailUser(_model.Id);
                 }
@@ -205,7 +207,7 @@ namespace Repositories.Repositories
                     return -1;
                 }
 
-                var userId = (int)await _UserDAL.CreateAsync(entity);
+                var userId =  _UserDAL.InsertUser(entity);
 
                 if (!string.IsNullOrEmpty(model.RoleId))
                 {
@@ -251,7 +253,7 @@ namespace Repositories.Repositories
                 {
                     model.Status = 0;
                 }
-                await _UserDAL.UpdateAsync(model);
+                 _UserDAL.UpdateUser(model);
                 return model.Status;
             }
             catch (Exception ex)
@@ -780,5 +782,49 @@ namespace Repositories.Repositories
                 return -1;
             }
         }
+        public async Task<List<User>> GetBySuplierId(int suplier_id)
+        {
+            return await _UserDAL.GetBySuplierId(suplier_id);
+
+        }
+        public async Task<int> UpdateSuplierUser(User request)
+        {
+            try
+            {
+
+                if (request!=null && request.Id > 0)
+                {
+                    var exists = await _UserDAL.GetById(request.Id);
+                    if (exists != null && exists.Id > 0)
+                    {
+                        exists.UserName = request.UserName;
+                        if(request.Password!=null && request.Password.Trim() != "")
+                        {
+                            exists.Password = EncodeHelpers.MD5Hash(request.Password);
+                        }
+                        exists.FullName = request.FullName;
+                        exists.Email = request.Email;
+                        exists.Phone = request.Phone;
+                        exists.Status = request.Status;
+                        exists.ModifiedBy = request.ModifiedBy;
+                        exists.ModifiedOn = request.ModifiedOn;
+                        _UserDAL.UpdateUser(exists);
+                        return exists.Id;
+                    }
+                }
+                return _UserDAL.InsertUser(request);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("UpdateSuplierUser - ClientDAL: " + ex);
+                return -1;
+            }
+        }
+        public async Task<User> GetByUserName(string input)
+        {
+            return await _UserDAL.GetByUserName(input);
+        }
+
+
     }
 }

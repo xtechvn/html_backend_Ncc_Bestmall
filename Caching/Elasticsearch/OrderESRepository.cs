@@ -1,8 +1,11 @@
 ﻿using Elasticsearch.Net;
+using Entities.Models;
 using Entities.ViewModels.ElasticSearch;
 using ENTITIES.ViewModels.ElasticSearch;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Nest;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,47 +14,63 @@ using Utilities;
 
 namespace Caching.Elasticsearch
 {
-    public class OrderESRepository : ESRepository<OrderElasticsearchViewModel>
+    public class OrderESRepository
     {
-        public string index_name = "order_hulotoys_store";
+        public string index_name = "hulotoys_sp_getorder";
         private readonly IConfiguration configuration;
-        private static string _ElasticHost;
-        public OrderESRepository(string Host, IConfiguration _configuration) : base(Host)
+        private static ElasticClient _elasticClient;
+        public OrderESRepository( IConfiguration _configuration) 
         {
-            _ElasticHost = Host;
             configuration = _configuration;
             index_name = _configuration["DataBaseConfig:Elastic:Index:Order"];
+            var settings = new ConnectionSettings(new Uri(configuration["DataBaseConfig:Elastic:Host"]))
+               .DefaultIndex(index_name);
+            _elasticClient = new ElasticClient(settings);
         }
         public async Task<List<OrderElasticsearchViewModel>> GetOrderNoSuggesstion(string txt_search)
         {
             List<OrderElasticsearchViewModel> result = new List<OrderElasticsearchViewModel>();
             try
             {
-                int top = 30;
-                var nodes = new Uri[] { new Uri(_ElasticHost) };
-                var connectionPool = new StaticConnectionPool(nodes);
-                var connectionSettings = new ConnectionSettings(connectionPool).DisableDirectStreaming().DefaultIndex(index_name);
-                var elasticClient = new ElasticClient(connectionSettings);
+                
+                var query_param = "*" + txt_search.Trim().ToUpper() + "*";
+                var searchDescriptor = new SearchDescriptor<object>()
+            .Index(index_name)
+            .Query(q => q
+                .Bool(b => b
+                    .Must(m => m
+                        .MatchPhrasePrefix(mp => mp
+                            .Field("OrderNo")
+                            .Query(txt_search.Trim()) // No wildcards here, let the analyzer handle it
+                        )
+                    )
+                )
+            )
+            .From(0)
+            .Size(10);
 
-                var search_response = elasticClient.Search<OrderElasticsearchViewModel>(s => s
-                          .Index(index_name + (_company_type.Trim() == "0" ? "" : "_" + _company_type.Trim()))
-                          .Size(top)
-                          .Query(q =>
-                             q.QueryString(qs => qs
-                               .Fields(new[] { "orderno" })
-                               .Query("*" + txt_search.ToUpper() + "*")
-                               .Analyzer("standard")
-                           )
-                          ));
+                var search_response = await _elasticClient.SearchAsync<object>(searchDescriptor);
 
-                if (!search_response.IsValid)
+                //var search_response = elasticClient.Search<OrderElasticsearchViewModel>(s => s
+                //    .Index(index_name)
+                //    .Size(top)
+                //    .Query(q =>
+                //        q.QueryString(qs => qs
+                //            .Fields(fs => fs
+                //                .Field(f => f.OrderNo)
+                //            )
+                //            .Query(query_param) // No wildcards here, let the analyzer handle it
+                //            .DefaultOperator(Operator.And) // Or Operator.Or, depending on desired behavior
+                //            .Analyzer("standard")
+                //        )
+                //    )
+                //);
+
+                if (search_response.IsValid)
                 {
-                    return result;
-                }
-                else
-                {
-                    result = search_response.Documents as List<OrderElasticsearchViewModel>;
-                    return result;
+                    var json = JsonConvert.SerializeObject(search_response.Documents);
+                    result = JsonConvert.DeserializeObject<List<OrderElasticsearchViewModel>>(json);
+                   // result = search_response.Documents as List<OrderElasticsearchViewModel>;
                 }
             }
             catch (Exception ex)
@@ -59,6 +78,7 @@ namespace Caching.Elasticsearch
                 LogHelper.InsertLogTelegram("GetOrderNoSuggesstion - OrderESRepository. " + ex);
                 return null;
             }
+            return result;
 
         }
         public async Task<List<OrderElasticsearchViewModel>> GetOrderNoSuggesstion2(string txt_search)
@@ -67,13 +87,9 @@ namespace Caching.Elasticsearch
             try
             {
                 int top = 30;
-                var nodes = new Uri[] { new Uri(_ElasticHost) };
-                var connectionPool = new StaticConnectionPool(nodes);
-                var connectionSettings = new ConnectionSettings(connectionPool).DisableDirectStreaming().DefaultIndex(index_name);
-                var elasticClient = new ElasticClient(connectionSettings);
 
-                var search_response = elasticClient.Search<OrderElasticsearchViewModel>(s => s
-                          .Index(index_name + (_company_type.Trim() == "0" ? "" : "_" + _company_type.Trim()))
+                var search_response = _elasticClient.Search<OrderElasticsearchViewModel>(s => s
+                          .Index(index_name)
                           .Size(top)
                           .Query(q =>
                            q.Bool(

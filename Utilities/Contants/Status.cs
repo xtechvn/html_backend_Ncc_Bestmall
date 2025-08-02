@@ -86,4 +86,5 @@ namespace Utilities.Contants
         CONFIRMED = 1,
         DELETED = 2
     }
+
 }
