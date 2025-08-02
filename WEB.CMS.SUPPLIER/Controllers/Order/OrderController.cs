@@ -11,7 +11,7 @@ using Utilities.Contants;
 using WEB.CMS.Controllers.Elastic.Bussiness;
 using WEB.CMS.Models.Product;
 
-namespace WEB.CMS.SUPPLIER.Controllers
+namespace WEB.CMS.Controllers
 {
 
     public class OrderController : Controller

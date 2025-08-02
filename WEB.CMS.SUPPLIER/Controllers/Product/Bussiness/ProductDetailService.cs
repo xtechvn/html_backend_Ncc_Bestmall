@@ -5,7 +5,7 @@ using Repositories.IRepositories;
 using Utilities.Contants.ProductV2;
 using WEB.CMS.Models.Product;
 
-namespace WEB.CMS.SUPPLIER.Controllers.Product.Bussiness
+namespace WEB.CMS.Controllers.Product.Bussiness
 {
     public class ProductDetailService
     {

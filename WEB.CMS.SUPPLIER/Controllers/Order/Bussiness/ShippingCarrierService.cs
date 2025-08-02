@@ -5,7 +5,7 @@ using Entities.Models;
 using Utilities;
 using WEB.CMS.Service.Carriers;
 
-namespace WEB.CMS.SUPPLIER.Controllers.Order.Bussiness
+namespace WEB.CMS.Controllers.Order.Bussiness
 {
     public class ShippingCarrierService
     {

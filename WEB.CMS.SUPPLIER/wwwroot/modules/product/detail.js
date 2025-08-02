@@ -14,15 +14,10 @@ var product_detail_new = {
         product_detail_new.ShowProductTab()
         product_detail_new.DynamicBind()
         product_detail_new.RenderAttributesPrice()
+       // product_detail_new.Select2Supplier($('#supplier-id select'))
         product_detail_new.Select2Label($('#label-id select'))
-        product_detail_new.Select2Spec($('#description-specification-list select'))
         $('#specifications-list .spec-value').attr('readonly', 'readonly')
-        _common.tinyMce('#description-textarea')
-        _common.tinyMce('#description-ingredients-textarea')
-        _common.tinyMce('#description-effect-textarea')
-        _common.tinyMce('#description-usepolicy-textarea')
-        product_detail_new.RenderProductBuyWith()
-
+        
     },
     DynamicBind: function () {
         $('body').on('click', '.change-tab', function () {
@@ -371,28 +366,11 @@ var product_detail_new = {
             let title = 'Xác nhận ẩn sản phẩm';
             let description = 'Sản phẩm sẽ không còn được hiển thị ngoài trang sản phẩm, bạn có chắc chắn không?';
             _msgconfirm.openDialog(title, description, function () {
-                _product_function.POST('/Product/ConfirmHideProduct', { product_id: $('#product_detail').attr('data-id') }, function (result) {
-                    if (result.is_success) {
+                _product_function.POST('/Product/CancelProduct', { product_id: $('#product_detail').val() }, function (result) {
+                    if (result.is_success && result.data) {
                         _msgalert.success('Ẩn sản phẩm thành công')
                         setTimeout(function () {
-                            window.location.href ='/product'
-                        }, 2000);
-                    }
-                    else {
-                    }
-                });
-
-            });
-        });
-        $('body').on('click', '#product-detail-show', function () {
-            let title = 'Xác nhận hiển thị sản phẩm';
-            let description = 'Sản phẩm sẽ được hiển thị ngoài trang sản phẩm, bạn có chắc chắn không?';
-            _msgconfirm.openDialog(title, description, function () {
-                _product_function.POST('/Product/ConfirmShowProduct', { product_id: $('#product_detail').attr('data-id') }, function (result) {
-                    if (result.is_success) {
-                        _msgalert.success('Hiển thị sản phẩm thành công')
-                        setTimeout(function () {
-                            window.location.href = '/product'
+                            window.location.href('/product/detail')
                         }, 2000);
                     }
                     else {
@@ -404,71 +382,10 @@ var product_detail_new = {
         $('body').on('click', '#product-detail-confirm', function () {
             product_detail_new.Summit()
         });
-        $('body').on('click', '#product-detail-confirm-admin', function () {
-            _msgconfirm.openDialog("Duyệt sản phẩm", "Sản phẩm này sẽ được duyệt, bạn chắc chắn không?", function () {
-                product_detail_new.ActiveProduct()
-
-            });
-        });
         $('body').on('keyup', '#single-product-amount input', function () {
             var price = isNaN(parseFloat($('#main-price').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#main-price').find('input').val().replaceAll(',', ''))
             var profit = isNaN(parseFloat($('#main-profit').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#main-profit').find('input').val().replaceAll(',', ''))
             $('#main-amount').find('input').val(_product_function.Comma(price + profit))
-        });
-        $('body').on('keyup', '#old-price input', function (e) {
-            var element = $(this)
-            product_detail_new.CalucateDiscount()
-        });
-        $('body').on('click', '#description-specification .summary .btn-add', function (e) {
-            var template = _product_constants.HTML.ProductDetail_Description_Specification
-            var html = template
-            $(html).insertBefore('#description-specification .summary')
-            product_detail_new.Select2Spec($('#description-specification .tr-new select'))
-            $('#description-specification .tr-new').removeClass('tr-new')
-        });
-        $('body').on('click', '#description-specification table .delete-row', function () {
-            var element = $(this)
-            element.closest('tr').remove()
-        });
-        //-- Product Buy With
-        $('body').on('click', '#add-product-buy-with-btn', function () {
-
-            product_detail_new.AddNewProductBuyWith()
-
-        });
-        $('body').on('click', '#add-product-buy-with .mfp-close, #add-product-buy-with-btn-cancel', function () {
-
-            product_detail_new.CloseAddNewProductBuyWith()
-
-        });
-        $('body').on('click', '#add-product-buy-with-search-confirm', function () {
-
-            product_detail_new.ProductBuyWithSearch()
-
-        });
-        $('body').on('click', '#add-product-buy-with td', function () {
-            var element = $(this)
-            var tr = element.closest('tr')
-            var checked = tr.find('.check-product').prop('checked')
-            if (!checked) tr.find('.check-product').prop('checked', true)
-            else tr.find('.check-product').prop('checked', false)
-        });
-        $('body').on('click', '#add-product-buy-with-search-clear', function () {
-
-            $('#add-product-buy-with-search-group').val('null').trigger('change')
-            $('#add-product-buy-with-search-name').val('').trigger('change')
-            product_detail_new.ProductBuyWithSearch()
-
-        });
-        $('body').on('click', '#add-product-buy-with-btn-confirm', function () {
-
-            product_detail_new.ConfirmProductBuyWith()
-            product_detail_new.CloseAddNewProductBuyWith()
-
-        });
-        $('body').on('click', '#product-buy-with tbody tr .delete-row', function () {
-            var element = $(this)
-            element.closest('tr').remove()
         });
     },
     ShowProductTab: function () {
@@ -840,8 +757,6 @@ var product_detail_new = {
             return
         }
         _global_function.AddLoading();
-       
-
         var model = {
             _id: $('#product_detail').attr('data-id') == undefined || $('#product_detail').attr('data-id').trim() == '' ? null : $('#product_detail').attr('data-id'),
             status: 1,
@@ -849,14 +764,9 @@ var product_detail_new = {
             price: $('#main-price input').val() == undefined || $('#main-price input').val().trim() == '' ? 0 : parseFloat($('#main-price input').val().replaceAll(',', '')),
             profit: $('#main-profit input').val() == undefined || $('#main-profit input').val().trim() == '' ? 0 : parseFloat($('#main-profit input').val().replaceAll(',', '')),
             amount: $('#main-amount input').val() == undefined || $('#main-amount input').val().trim() == '' ? 0 : parseFloat($('#main-amount input').val().replaceAll(',', '')),
-            discount: $('#discount input').val() == undefined || $('#discount input').val().trim() == '' ? 0 : parseFloat($('#discount input').val().replaceAll(',', '')),
-            old_price: $('#old-price input').val() == undefined || $('#old-price input').val().trim() == '' ? 0 : parseFloat($('#old-price input').val().replaceAll(',', '')),
+            discount: 0,
             quanity_of_stock: $('#main-stock input').val() == undefined || $('#main-stock input').val().trim() == '' ? 0 : parseInt($('#main-stock input').val().replaceAll(',', '')),
             label_id: $('#label-id select').find(':selected').val() == undefined || $('#label-id select').find(':selected').val().trim() == '' ? 0 : $('#label-id select').find(':selected').val(),
-            supplier_id: $('#supplier-id select').find(':selected').val() == undefined || $('#supplier-id select').find(':selected').val().trim() == '' ? 0 : $('#supplier-id select').find(':selected').val(),
-            review_count: $('#review-count input').val() == undefined || $('#review-count input').val().trim() == '' ? 0 : parseInt($('#review-count input').val().replaceAll(',', '')),
-            rating: $('#rating input').val() == undefined || $('#rating input').val().trim() == '' ? 0 : parseFloat($('#rating input').val().replaceAll(',', '')),
-            total_sold: $('#total-sold input').val() == undefined || $('#total-sold input').val().trim() == '' ? 0 : parseInt($('#total-sold input').val().replaceAll(',', '')),
 
         }
         model.images = []
@@ -881,12 +791,7 @@ var product_detail_new = {
         })
         model.avatar = $('#avatar .list .items').first().find('img').attr('src')
         if (_product_function.CheckIfImageVideoIsLocal(model.avatar)) {
-            var result = _product_function.POSTSynchorus('/Product/SummitImages',
-                {
-                    data_image: model.avatar,
-                    width: _product_constants.VALUES.AvatarSize.Width,
-                    height: _product_constants.VALUES.AvatarSize.Height
-                });
+            var result = _product_function.POSTSynchorus('/Product/SummitImages', { data_image: model.avatar })
             if (result != undefined && result.data != undefined && result.data.trim() != '') {
                 model.avatar = result.data
             }
@@ -938,40 +843,22 @@ var product_detail_new = {
         //console.log("Normalized Product Name before sending:", model.name);
         //Console.WriteLine("Received Product Name: " + model.name);
         model.group_product_id = $('#group-id input').attr('data-id')
-        // model.description = $('#description textarea').val()
-        model.description = tinymce.get('description-textarea').getContent()
-        model.description_ingredients = tinymce.get('description-ingredients-textarea').getContent()
-        model.description_effect = tinymce.get('description-effect-textarea').getContent()
-        model.description_usepolicy = tinymce.get('description-usepolicy-textarea').getContent()
-        //model.specification = []
-        //$('#specifications .col-md-6').each(function (index, item) {
-        //    var element = $(this)
-
-        //    model.specification.push({
-        //        _id: '-1',
-        //        attribute_id: element.find('.item').attr('data-id'),
-        //        value_type: element.find('.item').attr('data-type'),
-        //        value: element.find('.item').find('.namesp').find('input').val(),
-        //        type_ids: element.find('.item').find('.namesp').find('input').attr('data-value'),
-        //    })
-
-        //})
-
-        model.detail_specification = []
-        $('#description-specification tbody tr').each(function (index, item) {
+        model.description = $('#description textarea').val()
+        model.specification = []
+        $('#specifications .col-md-6').each(function (index, item) {
             var element = $(this)
-            if (element.hasClass('summary')) { return true }
-            var selected_key = element.find('select').find(':selected')
-            var selected_value = element.find('input')
-            if (selected_key != null && selected_key != undefined) {
-                model.detail_specification.push({
-                    key: selected_key.val(),
-                    value:selected_value.val()
-                })
-            }
-           
+
+            model.specification.push({
+                _id: '-1',
+                attribute_id: element.find('.item').attr('data-id'),
+                value_type: element.find('.item').attr('data-type'),
+                value: element.find('.item').find('.namesp').find('input').val(),
+                type_ids: element.find('.item').find('.namesp').find('input').attr('data-value'),
+            })
 
         })
+
+
 
         model.discount_group_buy = []
         $('#discount-groupbuy tbody .discount-groupbuy-row').each(function (index, item) {
@@ -1053,7 +940,6 @@ var product_detail_new = {
 
                     variation.variation_attributes.push({
                         id: i,
-                        _id: i,
                         name: attr_value
                     })
                 }
@@ -1067,15 +953,7 @@ var product_detail_new = {
         model.condition_of_product = $('#condition_of_product').find(':selected').val()
         model.sku = $('#sku input').val()
 
-        model.products_buy_with = []
-        $('#product-buy-with tbody tr').each(function (index, item) {
-            var compare = $(this)
-            var product_id_compare = compare.attr('data-id')
-            if (product_id_compare != undefined && product_id_compare.trim() != '') {
-                model.products_buy_with.push(product_id_compare)
-            }
-        })
-
+        
         
         _product_function.POST('/Product/Summit', { request: model }, function (result) {
             if (result.is_success) {
@@ -1135,12 +1013,12 @@ var product_detail_new = {
         }
         if (!success) return success
 
-        //if ($('#description textarea').val() == undefined
-        //    || $('#description textarea').val().trim()=='') {
-        //    _msgalert.error('Mô tả sản phẩm không được bỏ trống')
-        //    success = false
-        //}
-        //if (!success) return success
+        if ($('#description textarea').val() == undefined
+            || $('#description textarea').val().trim()=='') {
+            _msgalert.error('Mô tả sản phẩm không được bỏ trống')
+            success = false
+        }
+        if (!success) return success
 
         if ($('#group-id .namesp input').val() == undefined
             || $('#group-id .namesp input').val().trim() == ''
@@ -1246,10 +1124,11 @@ var product_detail_new = {
         $('#group-id input').attr('data-id', group_selected)
 
     },
+   
     Select2Label: function (element) {
         element.select2({
             ajax: {
-                url: "/Label/SearchLabel",
+                url: "/Label/Search",
                 type: "post",
                 dataType: 'json',
                 delay: 250,
@@ -1272,204 +1151,5 @@ var product_detail_new = {
                 cache: true
             }
         });
-    },
-    Select2Spec: function (selector) {
-        selector.each(function (index, item) {
-            var element=$(this)
-            element.select2({
-                ajax: {
-                    url: "/product/SpecificationKeySearch",
-                    type: "post",
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        var query = {
-                            txt_search: params.term,
-                        }
-                        return query;
-                    },
-                    processResults: function (response) {
-                        return {
-                            results: $.map(response.data, function (item) {
-                                return {
-                                    text: item.description,
-                                    id: item.description,
-                                }
-                            })
-                        };
-                    },
-                    cache: true
-                }
-            });
-        })
-       
-    },
-    ActiveProduct: function () {
-        _global_function.AddLoading()
-
-        var model = {
-            product_id: $('#product_detail').attr('data-id') == undefined || $('#product_detail').attr('data-id').trim() == '' ? null : $('#product_detail').attr('data-id'),
-        }
-        _product_function.POST('/Product/ConfirmActiveProduct', model, function (result) {
-            if (result.is_success) {
-                _global_function.RemoveLoading()
-                _msgalert.success(result.msg)
-                setTimeout(function () {
-                    window.location.href = '/product';
-                }, 2000);
-            }
-            else {
-                _global_function.RemoveLoading()
-
-                _msgalert.error(result.msg)
-
-            }
-        });
-    },
-    CalucateDiscount: function () {
-        var min_price = $('#main-amount input').val() == undefined || $('#main-amount input').val().trim() == '' ? 0 : parseFloat($('#main-amount input').val().replaceAll(',', ''));
-        var old_price = $('#old-price input').val() == undefined || $('#old-price input').val().trim() == '' ? 0 : parseFloat($('#old-price input').val().replaceAll(',', ''));
-        if (!$('#product-attributes-table').is(':hidden')) {
-            min_price=-1
-            $('#product-attributes-prices tbody tr').each(function (index, index) {
-                var element = $(this)
-                var amount = element.find('.td-amount').find('input').val() == undefined || element.find('.td-amount').find('input').val().trim() == '' ? 0 : parseFloat(element.find('.td-amount').find('input').val().replaceAll(',', ''))
-                if (min_price < 0 || min_price > amount) {
-                    min_price = amount
-                }
-            })
-        }
-        var discount_value = ((old_price - min_price) / old_price) * 100
-        var discount = Math.round(discount_value <= 0 ? 0 : discount_value)
-        $('#discount input').val(discount).trigger('change')
-    },
-    AddNewProductBuyWith: function () {
-        $('#add-product-buy-with').show()
-        $('#add-product-buy-with').addClass('show')
-        product_detail_new.ProductBuyWithSearch()
-    },
-    CloseAddNewProductBuyWith: function () {
-        $('#add-product-buy-with').hide()
-        $('#add-product-buy-with').removeClass('show')
-    },
-    RenderProductBuyWith: function () {
-        var model = {
-            id: $('#product_detail').attr('data-id')
-        }
-        _product_function.POST('/Product/ProductBuyWith', model, function (result) {
-            $('body').append(result)
-            product_detail_new.Select2BuyWith($('#add-product-buy-with-search-group'))
-        });
-    },
-    ProductBuyWithSearch: function () {
-        var group_selected = $('#add-product-buy-with-search-group') == undefined ? '-1' : $('#add-product-buy-with-search-group').find(':selected').val()
-        var model = {
-            keyword: $('#add-product-buy-with-search-name').val(),
-            group_id: group_selected == undefined ? '-1' : group_selected
-        }
-        _product_function.POST('/Product/ProductBuyWithSearch', model, function (result) {
-            $('#add-product-buy-with tbody').html(result)
-            $('#add-product-buy-with tbody tr').each(function (index, item) {
-                var element = $(this)
-                var product_id = element.attr('data-id')
-                $('#product-buy-with tbody tr').each(function (index, item) {
-                    var compare = $(this)
-                    var product_id_compare = compare.attr('data-id')
-                    if (product_id_compare.trim() == product_id) {
-                        element.find('.check-product').prop('checked', true)
-                        return false
-                    }
-                })
-
-            })
-        });
-    },
-    Select2BuyWith: function (element) {
-        element.select2({
-            ajax: {
-                url: "/Product/SearchGroupProduct",
-                type: "post",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    var query = {
-                        keyword: params.term,
-                    }
-                    return query;
-                },
-                processResults: function (response) {
-                    return {
-                        results: $.map(response.data, function (item) {
-                            return {
-                                text: '[' + item.id + '] - ' + item.name,
-                                id: item.id,
-                            }
-                        })
-                    };
-                },
-                cache: true
-            }
-        });
-    },
-    ConfirmProductBuyWith: function () {
-        var template = `
-          <tr data-id="@item._id">
-                                        <td style="max-width: 50px">
-                                            <label class="check-list mb20 mr25">
-                                                <input class="check-product" type="checkbox">
-                                                <span class="checkmark"></span>
-                                            </label>
-                                        </td>
-                                        <td style="max-width: 50%;">
-                                            <div class="item-order text-left" style=" display: flex; ">
-                                                <div class="img" style=" margin-right: 5px; ">
-                                                    <img src="@img_src" alt="" style=" width: 80px; ">
-                                                </div>
-                                                <div class="info">
-                                                    <h6 class="name-product"> @item.name </h6>
-                                                    <p class="text-secondary mb-0">Mã: @item.code</p>
-                                                    <p class="text-secondary mb-0">Phân loại: <nw class="product-variation"> @variation_string</nw></p>
-
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            đ @(item.amount_min == null ? item.amount.ToString("N0") : ((double)item.amount_min).ToString("N0"))
-                                        </td>
-                                        <td>@item.quanity_of_stock</td>
-                                        <td class="text-center">
-                                            <a href="javascript:;" class="delete-row">
-                                                <i class="icofont-trash"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-        `;
-        $('#add-product-buy-with tbody tr').each(function (index, item) {
-            var element = $(this)
-            var product_id = element.attr('data-id')
-            var exists = false
-            $('#product-buy-with tbody tr').each(function (index, item) {
-                var compare = $(this)
-                var product_id_compare = compare.attr('data-id')
-                if (product_id_compare.trim() == product_id) {
-                    exists = true
-                    return false
-                }
-            })
-            if (exists == false && element.find('.check-product').prop('checked') == true) {
-                $('#product-buy-with tbody').append(
-                    template.replaceAll('@item._id', element.attr('data-id'))
-                        .replaceAll('@img_src', element.find('img').attr('src'))
-                        .replaceAll('@item.name', element.find('.product-name').text())
-                        .replaceAll('đ @(item.amount_min == null ? item.amount.ToString("N0") : ((double)item.amount_min).ToString("N0"))', element.find('.product-amount').text())
-                        .replaceAll('@item.quanity_of_stock', element.find('.product-stock').text())
-                        .replaceAll('@item.code', element.find('.product-code').text())
-                        .replaceAll('@variation_string', element.find('.product-variation').text())
-
-                )
-            }
-        })
-
-
     }
 }

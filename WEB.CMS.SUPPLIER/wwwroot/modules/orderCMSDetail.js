@@ -5,7 +5,7 @@ $(document).ready(function () {
     _orderDetail.LoadPackages(input);
     _orderDetail.LoadContractPay(input);
     _orderDetail.LoadBillVAT(input);
-    //_orderDetail.LoadFile(input, type);
+    _orderDetail.LoadFile(input, type);
     _orderDetail.LoadPersonInCharge(input);
     _orderDetail.DynamicBind();
 });

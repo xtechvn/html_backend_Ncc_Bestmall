@@ -13,7 +13,7 @@ using WEB.CMS.Models;
 using WEB.CMS.RabitMQ;
 using WEB.CMS.SUPPLIER.Models;
 
-namespace WEB.CMS.SUPPLIER.Controllers
+namespace WEB.CMS.Controllers
 {
     public class AttachFileController : Controller
     {
