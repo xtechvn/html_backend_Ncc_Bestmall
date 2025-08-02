@@ -45,6 +45,12 @@ namespace WEB.CMS.Controllers
         {
             try
             {
+                if (model == null || model.from_date == DateTime.MinValue || model.to_date == DateTime.MinValue || model.status <= 0)
+                {
+
+                    return Content("");
+
+                }
                 var data = _DashboardRepository.GetRevenueOrderByDay(model.from_date, model.to_date, model.status);
                 if (data != null && data.Rows.Count > 0)
                 {
@@ -72,6 +78,12 @@ namespace WEB.CMS.Controllers
         {
             try
             {
+                if (model == null|| model.from_date==DateTime.MinValue|| model.to_date == DateTime.MinValue|| model.type <=0)
+                {
+
+                    return Content("");
+
+                }
                 var dataTable = _DashboardRepository.GetRevenueOrderGroupBySale(model.from_date, model.to_date, model.type);
 
                 switch (model.type)

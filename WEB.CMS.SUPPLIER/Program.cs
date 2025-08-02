@@ -150,8 +150,10 @@ app.MapControllerRoute(name: "ProductDetail",
  defaults: new { controller = "Product", action = "Detail" });
 
 app.MapControllerRoute(name: "Order",
- pattern: "/Order/{orderId?}",
+ pattern: "/Order/Detail/{orderId?}",
  defaults: new { controller = "Order", action = "OrderDetail" });
+
+
 
 
 app.MapControllerRoute(
