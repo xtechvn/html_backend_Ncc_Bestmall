@@ -17,8 +17,6 @@ public partial class Supplier
 
     public string Phone { get; set; }
 
-    public int? ProvinceId { get; set; }
-
     public string TaxCode { get; set; }
 
     public int? EstablishedYear { get; set; }
@@ -48,4 +46,16 @@ public partial class Supplier
     public int? UpdatedBy { get; set; }
 
     public DateTime? UpdatedDate { get; set; }
+
+    public int? Status { get; set; }
+
+    public int? DistrictId { get; set; }
+
+    public int? ProvinceId { get; set; }
+
+    public int? WardId { get; set; }
+
+    public string BannerMain { get; set; }
+
+    public string BannerSub { get; set; }
 }

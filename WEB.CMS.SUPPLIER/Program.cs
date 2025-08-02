@@ -1,12 +1,19 @@
-﻿using Caching.RedisWorker;
+﻿using Caching.Elasticsearch;
+using Caching.Elasticsearch.FlashSale;
+using Caching.RedisWorker;
 using Entities.ConfigModels;
+using HuloToys_Service.Controllers.Shipping.Business;
+using HuloToys_Service.ElasticSearch;
+using HuloToys_Service.ElasticSearch.NewEs;
+using HuloToys_Service.MongoDb;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.Configuration;
 using Repositories.IRepositories;
 using Repositories.Repositories;
+using WEB.CMS.Controllers.Elastic.Bussiness;
+using WEB.CMS.Models.Product;
+using WEB.CMS.RabitMQ;
 using WEB.CMS.SUPPLIER.Customize;
-using WEB.CMS.SUPPLIER.RabitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,31 +55,70 @@ builder.Services.AddSingleton<ICommonRepository, CommonRepository>();
 builder.Services.AddSingleton<IMenuRepository, MenuRepository>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
 builder.Services.AddTransient<IRoleRepository, RoleRepository>();
-builder.Services.AddTransient<IMFARepository, MFARepository>();
-builder.Services.AddTransient<IDashboardRepository, DashboardRepository>();
-
-builder.Services.AddTransient<IProductRepository, ProductRepository>();
-builder.Services.AddTransient<IGroupProductRepository, GroupProductRepository>();
-builder.Services.AddTransient<ILabelRepository, LabelRepository>();
-
 builder.Services.AddTransient<IPermissionRepository, PermissionRepository>();
 builder.Services.AddTransient<IPositionRepository, PositionRepository>();
-builder.Services.AddTransient<ISupplierRepository, SupplierRepository>();
+builder.Services.AddTransient<INoteRepository, NoteRepository>();
+builder.Services.AddTransient<IAttachFileRepository, AttachFileRepository>();
+builder.Services.AddTransient<IArticleRepository, ArticleRepository>();
+builder.Services.AddTransient<IProvinceRepository, ProvinceRepository>();
+builder.Services.AddTransient<IDistrictRepository, DistrictRepository>();
+builder.Services.AddTransient<IWardRepository, WardRepository>();
+builder.Services.AddTransient<IMFARepository, MFARepository>();
+builder.Services.AddTransient<IGroupProductRepository, GroupProductRepository>();
+builder.Services.AddTransient<IClientRepository, ClientRepository>();
+builder.Services.AddTransient<ICustomerManagerRepository, CustomerManagerRepository>();
+builder.Services.AddTransient<IAccountClientRepository, AccountClientRepository>();
+builder.Services.AddTransient<IBankingAccountRepository, BankingAccountRepository>();
+builder.Services.AddTransient<IUserAgentRepository, UserAgentRepository>();
+builder.Services.AddTransient<INationalRepository, NationalRepository>();
+builder.Services.AddTransient<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddTransient<IDashboardRepository, DashboardRepository>();
+builder.Services.AddTransient<ILabelRepository, LabelRepository>();
+builder.Services.AddTransient<IProductRepository, ProductRepository>();
+builder.Services.AddTransient<ILocationProductRepository, LocationProductRepository>();
+builder.Services.AddTransient<IAccountAccessApiRepository, AccountAccessApiRepository>();
+builder.Services.AddTransient<IAccountAccessApiPermissionRepository, AccountAccessApiPermissionRepository>();
 
+builder.Services.AddTransient<ICommentRepository, CommentRepository>();
 builder.Services.AddTransient<IOrderRepository, OrderRepository>();
 builder.Services.AddTransient<IContractPayRepository, ContractPayRepository>();
-builder.Services.AddTransient<IClientRepository, ClientRepository>();
-builder.Services.AddTransient<IUserRepository, UserRepository>();
-builder.Services.AddTransient<IProductRepository, ProductRepository>();
-builder.Services.AddTransient<IAccountClientRepository, AccountClientRepository>();
-builder.Services.AddTransient<IIdentifierServiceRepository, IdentifierServiceRepository>();
 builder.Services.AddTransient<IPaymentRequestRepository, PaymentRequestRepository>();
+builder.Services.AddTransient<IIdentifierServiceRepository, IdentifierServiceRepository>();
+builder.Services.AddTransient<IPaymentAccountRepository, PaymentAccountRepository>();
+builder.Services.AddTransient<IDepositHistoryRepository, DepositHistoryRepository>();
+builder.Services.AddSingleton<ILabelRepository, LabelRepository>();
+builder.Services.AddSingleton<ISupplierRepository, SupplierRepository>();
+builder.Services.AddSingleton<IFlashSaleRepository, FlashSaleRepository>();
+builder.Services.AddSingleton<IFlashSaleProductRepository, FlashSaleProductRepository>();
+builder.Services.AddSingleton<ICustomerManagerRepository, CustomerManagerRepository>();
 
 // Đăng ký QueueService
 builder.Services.AddScoped<QueueService>();
+//-- Mongodb:
+builder.Services.AddSingleton<ProductDetailMongoAccess>();
+builder.Services.AddSingleton<ProductSpecificationMongoAccess>();
+
+//-- ES:
+builder.Services.AddSingleton<ArticleCategoryESService>();
+builder.Services.AddSingleton<AttachFileESModelESRepository>();
+builder.Services.AddSingleton<FlashSaleProductESRepository>();
+builder.Services.AddSingleton<FlashSaleESRepository>();
+builder.Services.AddSingleton<ProductESRepository>();
+builder.Services.AddSingleton<ArticleCategoryESService>();
+builder.Services.AddSingleton<AttachFileESModelESRepository>();
+builder.Services.AddSingleton<ClientESRepository>();
+builder.Services.AddSingleton<ClientESService>();
+builder.Services.AddSingleton<GroupProductESService>();
+builder.Services.AddSingleton<LocationESService>();
+builder.Services.AddSingleton<OrderESRepository>();
+builder.Services.AddSingleton<ElasticService>();
+builder.Services.AddSingleton<ClientContactMongodbService>();
+builder.Services.AddSingleton<SupplierESRepository>();
+
 // Setting Redis                     
 builder.Services.AddSingleton<RedisConn>();
 builder.Services.AddSingleton<ManagementUser>();
+builder.Services.AddSingleton<ViettelPostService>();
 
 var app = builder.Build();
 

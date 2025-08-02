@@ -45,10 +45,6 @@ public partial class DataMSContext : DbContext
 
     public virtual DbSet<Brand> Brands { get; set; }
 
-    public virtual DbSet<Campaign> Campaigns { get; set; }
-
-    public virtual DbSet<CampaignAd> CampaignAds { get; set; }
-
     public virtual DbSet<Client> Clients { get; set; }
 
     public virtual DbSet<ClientLinkAff> ClientLinkAffs { get; set; }
@@ -68,6 +64,12 @@ public partial class DataMSContext : DbContext
     public virtual DbSet<DepositHistory> DepositHistories { get; set; }
 
     public virtual DbSet<District> Districts { get; set; }
+
+    public virtual DbSet<FanpageArticleImage> FanpageArticleImages { get; set; }
+
+    public virtual DbSet<FlashSale> FlashSales { get; set; }
+
+    public virtual DbSet<FlashSaleProduct> FlashSaleProducts { get; set; }
 
     public virtual DbSet<GroupProduct> GroupProducts { get; set; }
 
@@ -415,33 +417,6 @@ public partial class DataMSContext : DbContext
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
         });
 
-        modelBuilder.Entity<Campaign>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_tblPrice");
-
-            entity.ToTable("Campaign");
-
-            entity.Property(e => e.CampaignCode)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.CreateDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Description).HasMaxLength(500);
-            entity.Property(e => e.FromDate).HasColumnType("datetime");
-            entity.Property(e => e.ToDate).HasColumnType("datetime");
-            entity.Property(e => e.UpdateLast).HasColumnType("datetime");
-        });
-
-        modelBuilder.Entity<CampaignAd>(entity =>
-        {
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CampaignName).HasMaxLength(300);
-            entity.Property(e => e.EndDate).HasColumnType("datetime");
-            entity.Property(e => e.Note).HasMaxLength(400);
-            entity.Property(e => e.StartDate).HasColumnType("datetime");
-        });
-
         modelBuilder.Entity<Client>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_tblAccount");
@@ -638,6 +613,39 @@ public partial class DataMSContext : DbContext
                 .HasMaxLength(30);
         });
 
+        modelBuilder.Entity<FanpageArticleImage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__FanpageA__3214EC07D314954A");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.ImageUrl).IsRequired();
+        });
+
+        modelBuilder.Entity<FlashSale>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_tblPrice");
+
+            entity.ToTable("FlashSale");
+
+            entity.Property(e => e.Banner).HasMaxLength(500);
+            entity.Property(e => e.CreateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FromDate).HasColumnType("datetime");
+            entity.Property(e => e.Name).HasMaxLength(500);
+            entity.Property(e => e.ToDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdateLast).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<FlashSaleProduct>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_CampaignAds");
+
+            entity.ToTable("FlashSaleProduct");
+
+            entity.Property(e => e.ProductId).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<GroupProduct>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_groupProduct");
@@ -755,13 +763,17 @@ public partial class DataMSContext : DbContext
 
             entity.ToTable("Label");
 
+            entity.Property(e => e.Avatar).HasMaxLength(500);
+            entity.Property(e => e.Banner).HasMaxLength(500);
+            entity.Property(e => e.BannerMain).HasMaxLength(4000);
+            entity.Property(e => e.BannerSub).HasMaxLength(4000);
             entity.Property(e => e.CreateTime).HasColumnType("datetime");
-            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Description).HasMaxLength(4000);
             entity.Property(e => e.Icon).HasMaxLength(500);
             entity.Property(e => e.LabelCode)
-                .HasMaxLength(10)
+                .HasMaxLength(100)
                 .IsUnicode(false);
-            entity.Property(e => e.LabelName).HasMaxLength(50);
+            entity.Property(e => e.LabelName).HasMaxLength(200);
             entity.Property(e => e.UpdateTime).HasColumnType("datetime");
         });
 
@@ -862,7 +874,11 @@ public partial class DataMSContext : DbContext
                 .HasMaxLength(50)
                 .IsFixedLength();
             entity.Property(e => e.ReceiverName).HasMaxLength(150);
+            entity.Property(e => e.RefundDate).HasColumnType("datetime");
+            entity.Property(e => e.RefundReason).HasMaxLength(500);
             entity.Property(e => e.ShippingCode).HasMaxLength(50);
+            entity.Property(e => e.ShippingToken).HasMaxLength(4000);
+            entity.Property(e => e.ShippingTypeCode).HasMaxLength(50);
             entity.Property(e => e.UpdateLast).HasColumnType("datetime");
             entity.Property(e => e.UserGroupIds).HasMaxLength(250);
             entity.Property(e => e.UtmMedium).HasMaxLength(250);
@@ -874,6 +890,7 @@ public partial class DataMSContext : DbContext
             entity.ToTable("OrderDetail");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.ParentProductId).HasMaxLength(50);
             entity.Property(e => e.ProductCode)
                 .HasMaxLength(200)
                 .IsUnicode(false);
@@ -1081,9 +1098,9 @@ public partial class DataMSContext : DbContext
 
         modelBuilder.Entity<Province>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Province__FD0A6F838767F971");
-
-            entity.ToTable("Province");
+            entity
+                .HasNoKey()
+                .ToTable("Province");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.Name)
@@ -1095,9 +1112,7 @@ public partial class DataMSContext : DbContext
             entity.Property(e => e.ProvinceId)
                 .IsRequired()
                 .HasMaxLength(5);
-            entity.Property(e => e.Type)
-                .IsRequired()
-                .HasMaxLength(30);
+            entity.Property(e => e.Type).HasMaxLength(30);
         });
 
         modelBuilder.Entity<ProvinceHotel>(entity =>
@@ -1187,6 +1202,8 @@ public partial class DataMSContext : DbContext
             entity.ToTable("Supplier");
 
             entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.BannerMain).HasMaxLength(4000);
+            entity.Property(e => e.BannerSub).HasMaxLength(4000);
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Email)
@@ -1288,13 +1305,11 @@ public partial class DataMSContext : DbContext
 
             entity.ToTable("User");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Address).HasMaxLength(500);
             entity.Property(e => e.Avata).HasMaxLength(500);
             entity.Property(e => e.BirthDay).HasColumnType("datetime");
             entity.Property(e => e.CreatedOn).HasColumnType("datetime");
             entity.Property(e => e.Email)
-                .IsRequired()
                 .HasMaxLength(250)
                 .IsUnicode(false);
             entity.Property(e => e.FullName).HasMaxLength(500);

@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using Utilities;
 using Utilities.Contants;
 
-namespace WEB.CMS.SUPPLIER.Service.Carriers
+namespace WEB.CMS.Service.Carriers
 {
 
     public class NinjaVanCarrierService
@@ -15,11 +15,11 @@ namespace WEB.CMS.SUPPLIER.Service.Carriers
         private readonly RedisConn _redisConn;
         private readonly LocationESService _locationESService;
 
-        public NinjaVanCarrierService(IConfiguration configuration, RedisConn redisConn)
+        public NinjaVanCarrierService(IConfiguration configuration, RedisConn redisConn, LocationESService locationESService)
         {
             _configuration = configuration;
             _redisConn = redisConn;
-            _locationESService = new LocationESService(configuration["DataBaseConfig:Elastic:Host"], configuration);
+            _locationESService = locationESService;
         }
         /// <summary>
         /// Timeslot available: 09:00 - 12:00, 09:00 - 18:00, 09:00 - 22:00, 12:00 - 15:00, 15:00 - 18:00, 18:00 - 22:00, 
@@ -67,9 +67,9 @@ namespace WEB.CMS.SUPPLIER.Service.Carriers
                            + "[" + (order.Address == null ? "NULL" : order.Address) + "]");
                     return carrier_packages_id;
                 }
-                var provinces = _locationESService.GetProvincesByID((int)order.ProvinceId);
+                var provinces = _locationESService.GetProvincesById((int)order.ProvinceId);
                 var district = _locationESService.GetDistrictById((int)order.DistrictId);
-                var ward = _locationESService.GetWardsById((int)order.WardId);
+                var ward = _locationESService.GetWardById((int)order.WardId);
                 var http_client = new HttpClient();
                 var request = new HttpRequestMessage(HttpMethod.Post, _configuration["Carrier:NinjaVan:Domain"] + _configuration["Carrier:NinjaVan:APIs:CreateOrder"]);
                 request.Headers.Add("Authorization", "Bearer "+await GetBearerToken());

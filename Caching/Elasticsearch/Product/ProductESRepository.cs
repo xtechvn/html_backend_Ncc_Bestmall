@@ -1,34 +1,26 @@
-﻿using Elasticsearch.Net;
-using Entities.ViewModels;
-using Entities.ViewModels.ElasticSearch;
-using Entities.ViewModels.Products;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+﻿using IdGen;
 using Microsoft.Extensions.Configuration;
 using Nest;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Utilities;
-using Utilities.Contants;
 
 namespace Caching.Elasticsearch
 {
-    //https://www.steps2code.com/post/how-to-use-elasticsearch-in-csharp
-    public class ProductESRepository : ESRepository<ProductESModel>
+
+    public class ProductESRepository
     {
         public string index = "hulotoys_mongodb_product";
-        private static string _ElasticHost;
         private static IConfiguration configuration;
         private readonly ElasticClient _client;
 
-        public ProductESRepository(string Host, IConfiguration _configuration) : base(Host)
+        public ProductESRepository(IConfiguration _configuration)
         {
-            _ElasticHost = Host;
             configuration = _configuration;
             index = _configuration["DataBaseConfig:Elastic:Index:Product"];
-            var settings = new ConnectionSettings(new Uri(_ElasticHost))
+            var settings = new ConnectionSettings(new Uri(configuration["DataBaseConfig:Elastic:Host"]))
                 .DefaultIndex(index);
             _client = new ElasticClient(settings);
         }
@@ -49,13 +41,26 @@ namespace Caching.Elasticsearch
         }
 
         // 2. Function xóa theo product_id
-        public async Task<bool> DeleteByProductIdAsync(string productId)
+        public async Task<bool> DeleteByProductId(string product_id)
         {
             var response = await _client.DeleteByQueryAsync<ProductESModel>(q => q
                 .Query(rq => rq
                     .Term(t => t
                         .Field(f => f.product_id)
-                        .Value(productId)
+                        .Value(product_id)
+                    )
+                )
+            );
+
+            return response.IsValid && response.Deleted > 0;
+        }
+        public async Task<bool> DeleteBySupplier(int supplier_id)
+        {
+            var response = await _client.DeleteByQueryAsync<ProductESModel>(q => q
+                .Query(rq => rq
+                    .Term(t => t
+                        .Field(f => f.supplier_id)
+                        .Value(supplier_id)
                     )
                 )
             );
@@ -90,7 +95,21 @@ namespace Caching.Elasticsearch
             return response.Documents.ToList();
         }
 
+        public long GenerateId()
+        {
+            IdGenerator _generator = new(0); // Machine ID = 0
+            return _generator.CreateId();
+        }
+        public async Task<bool> DeleteAll()
+        {
+            var response = await _client.DeleteByQueryAsync<ProductESModel>(q => q
+                .Query(rq => rq
+                    .MatchAll()
+                )
+            );
 
+            return response.IsValid && response.Deleted > 0;
+        }
     }
 
 

@@ -6,28 +6,17 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using OtpNet;
 using Repositories.IRepositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Utilities;
-using Utilities.Common;
 using Utilities.Contants;
-using WEB.CMS.SUPPLIER.Models;
-using Microsoft.AspNetCore.Http;
+using WEB.CMS.Models;
 using Newtonsoft.Json.Linq;
-using WEB.Adavigo.CMS.Service;
-using Microsoft.AspNetCore.Hosting;
 using Caching.RedisWorker;
+using WEB.CMS.SUPPLIER.Models;
 
-namespace WEB.CMS.SUPPLIER.Controllers
+namespace WEB.CMS.Controllers
 {
     public class AccountController : Controller
     {
@@ -228,9 +217,9 @@ namespace WEB.CMS.SUPPLIER.Controllers
                     new Claim(ClaimTypes.NameIdentifier, model.Entity.Id.ToString()),
                     new Claim(ClaimTypes.Name, model.Entity.UserName),
                     new Claim("DepartmentId", (model.Entity.DepartmentId ?? 0).ToString()),
-                    new Claim(ClaimTypes.Email, model.Entity.Email),
+                    new Claim(ClaimTypes.Email, model.Entity.Email??""),
                     new Claim(ClaimTypes.Role, string.Join(",", model.RoleIdList)),
-                    new Claim("SupplierId", string.Join(",", model.Entity.SupplierId == null || model.Entity.SupplierId <= 0 ? 0 : (int)model.Entity.SupplierId))
+                    new Claim("SupplierId", (model.Entity.SupplierId == null ? 0 : (int)model.Entity.SupplierId).ToString())
                 };
 
                 //--Get and Cache Permission:
@@ -253,7 +242,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
                 var data_encode = JsonConvert.SerializeObject(user_role_cache);
                 string token = CommonHelper.Encode(data_encode, _configuration["DataBaseConfig:key_api:api_manual"]);
                 //string token = data_encode;
-                _redisConn.Set(CacheName.USER_ROLE + model.Entity.Id + "_" + _configuration["CompanyType"], token, Convert.ToInt32(_configuration["Redis:Database:db_common"]));
+                _redisConn.Set(CacheName.USER_ROLE + model.Entity.Id + "_", token, Convert.ToInt32(_configuration["Redis:Database:db_common"]));
 
 
                 //-- Login:
@@ -267,7 +256,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
 
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
             }
-            catch
+            catch (Exception ex) 
             {
                 throw;
             }
@@ -423,10 +412,11 @@ namespace WEB.CMS.SUPPLIER.Controllers
                         var user = await _UserRepository.GetById(login_model.id);
                         string enviroment = _configuration["Config:OTP_Enviroment"];
                         if (enviroment == null) enviroment = "";
-                        ViewBag.QRCodeUri = MFAService.GenerateQRCode(mfa_record, enviroment);
+                        ViewBag.QRCodeUri = MFAService.GenerateQRCode(mfa_record, enviroment, _configuration["Config:OTP_Provider"]);
                         ViewBag.SecretKey = MFAService.FormatKey(mfa_record.SecretKey);
-                        string label_name = "AdavigoCMS_" + enviroment + "-" + user.UserName;
+                        string label_name = "BestMall_" + enviroment + "-" + user.UserName;
                         ViewBag.Issurer = label_name;
+                        ViewBag.provider = _configuration["Config:OTP_Provider"];
                         ViewBag.Status = mfa_record.Status;
                         return View();
                     }

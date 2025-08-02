@@ -160,7 +160,42 @@ namespace DAL
             }
             return null;
         }
+        public List<GroupProduct> Search(string keyword,int parent_id=1)
+        {
+            try
+            {
+                using (var _DbContext = new EntityDataContext(_connection))
+                {
+                    return _DbContext.GroupProducts.Where(s => s.Name.Contains(keyword) && s.ParentId==parent_id && s.Status == (int)ArticleStatus.PUBLISH).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("Search - GroupProductDAL: " + ex);
 
+            }
+            return new List<GroupProduct>();
+        }
+        public List<GroupProduct> GetByParentIdOrder(long parent_id)
+        {
+            try
+            {
+                using (var _DbContext = new EntityDataContext(_connection))
+                {
+                    var data= _DbContext.GroupProducts.Where(s => s.ParentId == parent_id).ToList();
+                    if(data!=null && data.Count > 0)
+                    {
+                        return data.OrderBy(x=>x.OrderNo).ToList();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("GetByParentIdOrder - GroupProductDAL: " + ex);
+
+            }
+            return null;
+        }
 
     }
 }

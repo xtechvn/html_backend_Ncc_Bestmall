@@ -53,6 +53,33 @@ namespace Entities.ViewModels.Products
         public float? package_depth { get; set; }
         public int? supplier_id { get; set; }
         public int? label_id { get; set; }
+        public double? old_price { get; set; }
+        public string description_ingredients { get; set; }
+        public string description_effect { get; set; }
+        public string description_usepolicy { get; set; }
+        public double? review_count { get; set; }
+        public float? rating { get; set; }
+        public long? total_sold { get; set; }
+        public List<ProductMongoDbSpecification>? detail_specification { get; set; }
+        public int? supplier_status { get; set; }
+        public List<string> products_buy_with { get; set; }
+        public float? profit_value { get; set; }
+        public int? profit_value_type { get; set; }
+        public string description_delivery { get; set; }
+        public string description_refund { get; set; }
 
+    }
+    public class ProductMongoDbSpecification
+    {
+        public string key { get; set; }
+        public string value { get; set; }
+    }
+    public class ProductMongoDbModelFEResponse : ProductMongoDbModel
+    {
+        public int? exists_flashsale_id { get; set; }
+        public string exists_flashsale_name { get; set; }
+        public double? amount_after_flashsale { get; set; }
+        public DateTime? flash_sale_fromdate { get; set; }
+        public DateTime? flash_sale_todate { get; set; }
     }
 }

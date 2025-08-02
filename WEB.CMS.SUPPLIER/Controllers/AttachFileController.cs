@@ -1,9 +1,16 @@
-﻿using Entities.ViewModels.Attachment;
+﻿using Caching.Elasticsearch;
+using Entities.Models;
+using Entities.ViewModels.Attachment;
+using Entities.ViewModels.ElasticSearch;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Repositories.IRepositories;
 using System.Security.Claims;
-using Utilities.Contants;
 using Utilities;
+using Utilities.Contants;
+using WEB.BestMall.CMS.Service;
+using WEB.CMS.Models;
+using WEB.CMS.RabitMQ;
 using WEB.CMS.SUPPLIER.Models;
 
 namespace WEB.CMS.Controllers
@@ -13,31 +20,28 @@ namespace WEB.CMS.Controllers
         private readonly IAttachFileRepository _AttachFileRepository;
         private readonly IWebHostEnvironment _WebHostEnvironment;
         private readonly SUPPLIER.Models.AppSettings config;
-        public AttachFileController(IAttachFileRepository attachFileRepository, IWebHostEnvironment hostEnvironment)
+        private readonly StaticAPIService staticAPIService;
+        private readonly IConfiguration _configuration;
+        private readonly string static_domain = "";
+        private readonly WorkQueueClient work_queue;
+        private readonly QueueService _queueService;
+        private readonly AttachFileESModelESRepository attachFileESRepository;
+        public AttachFileController(IAttachFileRepository attachFileRepository, IWebHostEnvironment hostEnvironment, IConfiguration configuration, QueueService queueService,
+            AttachFileESModelESRepository _attachFileESRepository)
         {
             _AttachFileRepository = attachFileRepository;
             _WebHostEnvironment = hostEnvironment;
             config = ReadFile.LoadConfig();
+            staticAPIService=new StaticAPIService(configuration);
+            _configuration = configuration;
+            static_domain = configuration["DomainConfig:ImageStatic"];
+            work_queue = new WorkQueueClient(configuration);
+            _queueService = queueService;
+            attachFileESRepository = _attachFileESRepository;
+
         }
-        public async Task<IActionResult> Widget(string id, long DataId, int Type, AttachmentsOption option)
-        {
-            var _UserLogin = 0;
-            if (HttpContext.User.FindFirst(ClaimTypes.NameIdentifier) != null)
-            {
-                _UserLogin = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            }
-            var models = await _AttachFileRepository.GetListByType(DataId, Type);
-            ViewBag.DataId = DataId;
-            ViewBag.Type = Type;
-            ViewBag.UserId = _UserLogin;
-            ViewBag.Data = models;
-            ViewBag.ImageExtension = new List<string>() { "png", "jpg", "gif", "jpeg", "PNG", "JPG", "GIF", "JPEG" };
-            ViewBag.VideoExtension = new List<string>() { "mp4", "vod", "mkv", "avi", "MP4", "VOD", "MKV", "AVI" };
-            ViewBag.Option = option;
-            ViewBag.ID = id;
-            return PartialView();
-        }
-        public async Task<IActionResult> UploadFile(IFormFile[] files)
+
+        public async Task<IActionResult> Upload(IFormFile[] files)
         {
             try
             {
@@ -46,20 +50,21 @@ namespace WEB.CMS.Controllers
                 {
                     _UserLogin = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
                 }
+
                 List<string> urls = new List<string>();
                 if (files != null && files.Length > 0)
                 {
                     foreach (var file in files)
                     {
                         string _FileName = file.FileName;
-                        string _UploadFolder = @"uploads/images/" + _UserLogin;
+                        string _UploadFolder = (@"uploads/images/" + _UserLogin).Replace("/","\\");
                         string _UploadDirectory = Path.Combine(_WebHostEnvironment.WebRootPath, _UploadFolder);
 
                         if (!Directory.Exists(_UploadDirectory))
                         {
                             Directory.CreateDirectory(_UploadDirectory);
                         }
-                        string filePath = Path.Combine(_UploadDirectory, _FileName);
+                        string filePath = _UploadDirectory +"\\"+_FileName;
                         if (!System.IO.File.Exists(filePath))
                         {
                             using (var fileStream = new FileStream(filePath, FileMode.Create))
@@ -67,7 +72,7 @@ namespace WEB.CMS.Controllers
                                 await file.CopyToAsync(fileStream);
                             }
                         }
-                        urls.Add("/" + _UploadFolder + "/" + _FileName);
+                        urls.Add("\\" + _UploadFolder + "\\" + _FileName);
                     }
                 }
 
@@ -92,7 +97,7 @@ namespace WEB.CMS.Controllers
             }
             catch (Exception ex)
             {
-                LogHelper.InsertLogTelegram("UploadFile - AttachFileViewComponent" + ex.ToString());
+                LogHelper.InsertLogTelegram("Upload - AttachFileController" + ex.ToString());
             }
             return new JsonResult(new
             {
@@ -100,97 +105,168 @@ namespace WEB.CMS.Controllers
                 msg = "Lỗi trong quá trình tải lên tệp đính kèm, vui lòng liên hệ IT.",
             });
         }
-        public async Task<IActionResult> ConfirmFileUpload(List<AttachfileViewModel> files, long data_id, int service_type)
+        public async Task<IActionResult> Confirm(List<AttachfileViewModel> files)
         {
             try
             {
-                var key = MFAService.Get_AESKey(MFAService.ConvertBase64StringToByte(ReadFile.LoadConfig().AES_KEY));
-                var iv = MFAService.Get_AESIV(MFAService.ConvertBase64StringToByte(ReadFile.LoadConfig().AES_IV));
-
-
-                var _UserLogin = 0;
-                if (HttpContext.User.FindFirst(ClaimTypes.NameIdentifier) != null)
+                List<string> urls = new List<string>();
+                if(files != null && files.Count > 0)
                 {
-                    _UserLogin = int.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
-                }
-                if (files != null && files.Count > 0)
-                {
-                    string url_post = config.IMAGE_DOMAIN + config.API_STATIC_UPLOADFILE;
-                    var _httpClient = new HttpClient();
+                   
                     foreach (var file in files)
                     {
                         string full_path = Directory.GetCurrentDirectory() + "\\wwwroot\\" + file.path.Replace("/", "\\");
+                        // Đọc toàn bộ nội dung của file ảnh dưới dạng byte array
+                        byte[] imageBytes = System.IO.File.ReadAllBytes(full_path);
+
+                        // Chuyển đổi byte array thành chuỗi Base64
+                        string base64String = Convert.ToBase64String(imageBytes);
+
+                        var path = file.path.Split(".");
+
+                        Utilities.ViewModels.Article.ImageBase64 image = new()
+                        {
+                            ImageData = base64String,
+                            ImageExtension = path[path.Length - 1]
+                        };
+                        var url = await staticAPIService.UploadImageBase64(image);
+                        if(url!=null && url.Trim() != "")
+                        {
+                            urls.Add(url);
+                        }
+                        try { System.IO.File.Delete(full_path); } catch { }
+
+                    }
+
+                }
+                return Ok(new
+                {
+                    status = (int)ResponseType.SUCCESS,
+                    msg = "Thành công",
+                    data = urls
+                });
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("Confirm - AttachFileController" + ex.ToString());
+            }
+            return Ok(new
+            {
+                status = (int)ResponseType.FAILED,
+                msg = "Failed"
+            });
+        }
+        [HttpPost]
+        public async Task<IActionResult> ConfirmAttachFile(List<AttachfileViewModel> files, int data_id,int type)
+        {
+            try
+            {
+                List<AttachfileViewModel> urls = new List<AttachfileViewModel>();
+                if (files != null && files.Count > 0)
+                {
+                    var current_attachs = await _AttachFileRepository.GetListByDataID(data_id, type);
+                    if (current_attachs != null && current_attachs.Count>0) {
+                        var del_attach = current_attachs.Where(x => !files.Select(y => y.id).Contains(x.Id));
+                        if (del_attach.Any())
+                        {
+                            foreach (var att in del_attach)
+                            {
+                               await _AttachFileRepository.Delete(att.Id, 0);
+                            }
+                        }
+
+                    }
+                    
+                    
+                    foreach (var file in files) 
+                    {
+                        if (file.id > 0 && file.path.Contains(static_domain)) { continue; }
+                        string full_path = Directory.GetCurrentDirectory() + "\\wwwroot\\" + file.path.Replace("/", "\\");
                         try
                         {
-                            var path = file.path.Split("/");
-                            var file_name = path[path.Length - 1];
-                            var encrypt = MFAService.AES_EncryptToByte(DateTime.Now.ToString(), key, iv);
-                            var token = MFAService.ConvertByteToBase64String(encrypt);
-                            //Bind your file location
-                            var readFileData = System.IO.File.ReadAllBytes(full_path);
-                            //Create Multipart Request
-                            var formContent = new MultipartFormDataContent();
+                            // Đọc toàn bộ nội dung của file ảnh dưới dạng byte array
+                            byte[] imageBytes = System.IO.File.ReadAllBytes(full_path);
 
-                            ByteArrayContent bytes = new ByteArrayContent(readFileData);
-                            MultipartFormDataContent multiContent = new MultipartFormDataContent();
-                            formContent.Add(bytes, "data", path[path.Length - 1]);
+                            // Chuyển đổi byte array thành chuỗi Base64
+                            string base64String = Convert.ToBase64String(imageBytes);
 
-                            formContent.Add(new StringContent(path[path.Length - 1]), "name");
-                            formContent.Add(new StringContent(data_id.ToString()), "data_id");
-                            formContent.Add(new StringContent(service_type.ToString()), "type");
-                            formContent.Add(new StringContent(token), "token");
-                            var response = await _httpClient.PostAsync(url_post, formContent);
-                            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                            var path = file.path.Split(".");
+
+                            Utilities.ViewModels.Article.ImageBase64 image = new()
                             {
-                                var content = Newtonsoft.Json.Linq.JObject.Parse(response.Content.ReadAsStringAsync().Result);
-                                if (content["status"] != null && content["status"].ToString() != null && content["status"].ToString().Trim() != ""
-                                    && content["url"] != null && content["url"].ToString() != null && content["url"].ToString().Trim() != "")
-                                {
-                                    file.path = config.IMAGE_DOMAIN + content["url"].ToString();
-                                    try
-                                    {
-                                        System.IO.File.Delete(full_path);
-                                    }
-                                    catch { }
-                                }
+                                ImageData = base64String,
+                                ImageExtension = path[path.Length - 1]
+                            };
+                            var url = await staticAPIService.UploadImageBase64(image);
+                            if (url != null && url.Trim() != "")
+                            {
+                                file.path = static_domain + url;
+                                urls.Add(file);
+                            }
+                            try { System.IO.File.Delete(full_path); } catch { }
+                            var item = new Entities.Models.AttachFile();
+                            if (current_attachs!=null && file.id>0 && current_attachs.Any(x => x.Id == file.id))
+                            {
+                                item = current_attachs.FirstOrDefault(x => x.Id == file.id);
+
 
                             }
+                            await _AttachFileRepository.AddAttachFile(new Entities.Models.AttachFile()
+                            {
+                                Id = file.id,
+                                Capacity=0,
+                                CreateDate=item.CreateDate??DateTime.Now,
+                                DataId=data_id,
+                                Ext=file.ext,
+                                Path=file.path,
+                                Type=type,
+                                UserId=0
+                                
+                            });
 
                         }
                         catch
                         {
-
+                            continue;
                         }
-                        var ext_split = file.path.Split(".");
-                        file.ext = ext_split[^1];
                     }
-                    await _AttachFileRepository.SaveAttachFileURL(files, data_id, _UserLogin, service_type);
-                    await _AttachFileRepository.DeleteNonExistsAttachFile(files.Select(x => x.id).ToList(), data_id, service_type);
-                    return Ok(new
-                    {
-                        status = (int)ResponseType.SUCCESS,
-                        msg = "Thành công"
-                    });
+
                 }
                 else
                 {
-                    await _AttachFileRepository.DeleteNonExistsAttachFile(new List<long>(), data_id, service_type);
-                    return Ok(new
+                    var current_attachs = await _AttachFileRepository.GetListByDataID(data_id, type);
+                    foreach (var att in current_attachs)
                     {
-                        status = (int)ResponseType.SUCCESS,
-                        msg = "Thành công"
-                    });
+                        await _AttachFileRepository.Delete(att.Id, 0);
+                    }
                 }
+                await attachFileESRepository.DeleteByDataidAndType(data_id, type);
+
+                var attachs = await _AttachFileRepository.GetListByDataID(data_id, type);
+                if (attachs != null && attachs.Count > 0)
+                {
+                    foreach (var a in attachs)
+                    {
+                        var insert_model = JsonConvert.DeserializeObject<AttachFileESModel>(JsonConvert.SerializeObject(a));
+                        await attachFileESRepository.InsertAsync(insert_model);
+                    }
+                }
+                return Ok(new
+                {
+                    status = (int)ResponseType.SUCCESS,
+                    msg = "Thành công",
+                    data = urls
+                });
             }
             catch (Exception ex)
             {
-                LogHelper.InsertLogTelegram("ConfirmFileUpload - AttachFileController" + ex.ToString());
-                return Ok(new
-                {
-                    status = (int)ResponseType.FAILED,
-                    msg = "Lỗi trong quá trình xử lý vui lòng liên hệ IT"
-                });
+                LogHelper.InsertLogTelegram("ConfirmAttachFile - AttachFileController" + ex.ToString());
             }
+            return Ok(new
+            {
+                status = (int)ResponseType.FAILED,
+                msg = "Failed"
+            });
         }
     }
 }

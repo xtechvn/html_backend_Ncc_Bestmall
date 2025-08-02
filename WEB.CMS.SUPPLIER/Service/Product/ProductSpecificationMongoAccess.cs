@@ -4,7 +4,7 @@ using MongoDB.Driver;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
-namespace WEB.CMS.SUPPLIER.Models.Product
+namespace WEB.CMS.Models.Product
 {
     public class ProductSpecificationMongoAccess
     {

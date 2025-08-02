@@ -1,9 +1,12 @@
 ﻿@using Entities.ViewModels.Products
+@using Utilities.Contants
+@using Utilities.Contants.ProductV2
 @{
     Layout = null;
     List<ProductMongoDbModel> sub_products = (List<ProductMongoDbModel>)ViewBag.Sub;
     List<ProductMongoDbModel> main_products = (List<ProductMongoDbModel>)ViewBag.Main;
     string StaticDomain = (string)ViewBag.StaticDomain;
+    long count = (long)ViewBag.CountProduct;
 }
 @if(main_products!=null && main_products.Count > 0)
 {
@@ -13,19 +16,19 @@
         if (img_src != null && !img_src.Contains(StaticDomain) && !img_src.Contains("data:image") && !img_src.Contains("http"))
             img_src = StaticDomain + main.avatar;
         <tr data-id="@main._id">
-            <td style="width: 0;">
+            @*<td style="width: 0;">
                 <label class="check-list mb-3">
                     <input type="checkbox">
                     <span class="checkmark"></span>
                 </label>
-            </td>
+            </td>*@
             <td style="width: 100px;">
                 <div class="item-order">
                     <div class="img">
                         <img src="@img_src" alt="">
                     </div>
                     <div class="info">
-                        <h3 class="name-product">
+                        <h3 class="name-product" style="color:blue;">
                             @main.name
                         </h3>
                         <div class="cat" style="display:none;"></div>
@@ -58,6 +61,91 @@
                     stock_count = main.quanity_of_stock;
                 }
             }
+            <td class="text-center">
+                @{
+                  
+                    @switch (main.supplier_status)
+                    {
+                        case (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION:
+                            {
+                                @switch (main.status)
+                                {
+                                    case (int)ProductStatus.ON_WAITING_CONFIRM:
+                                        {
+                                            <span class="status-oranger">Chờ duyệt</span>
+                                        }
+                                        break;
+                                    case (int)ProductStatus.ACTIVE:
+                                        {
+                                            <span class="status-green">Hoạt động</span>
+
+                                        }
+                                        break;
+                                    case (int)ProductStatus.DEACTIVE:
+                                        {
+                                            <span class="status-red">Ngưng hoạt động</span>
+
+                                        }
+                                        break;
+                                    default:
+                                        {
+                                            <span class="status-oranger">Chờ duyệt</span>
+                                        }
+                                        break;
+                                }
+                            }
+                            break;
+                        case (int)SUPPLIER_STATUS.CONFIRMED:
+                            {
+                                <span class="status-green">Đã duyệt</span>
+
+                            }
+                            break;
+                        case (int)SUPPLIER_STATUS.DELETED:
+                            {
+                                <span class="status-red">Ngưng hoạt động</span>
+
+                            }
+                            break;
+                        default:
+                            {
+                                <span class="status-oranger">Chờ duyệt</span>
+                            }
+                            break;
+                    }
+                }
+
+            </td>
+            <td class="text-center">
+                @{
+                    @switch (main.supplier_status)
+                    {
+                        case (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION:
+                            {
+                                <span class="status-oranger">Chờ duyệt</span>
+                            }
+                            break;
+                        case (int)SUPPLIER_STATUS.CONFIRMED:
+                            {
+                                <span class="status-green">Đã duyệt</span>
+
+                            }
+                            break;
+                        case (int)SUPPLIER_STATUS.DELETED:
+                            {
+                                <span class="status-red">Ngưng hoạt động</span>
+
+                            }
+                            break;
+                        default:
+                            {
+                                <span class="status-oranger">Chờ duyệt</span>
+                            }
+                            break;
+                    }
+                }
+
+            </td>
             <td class="text-center"></td>
             <td class="text-center">@amount_html</td>
             <td class="text-center">@stock_count.ToString("N0")</td>
@@ -68,9 +156,24 @@
                 <div class="form-down grid-slide-{id}" style="display: none;">
                     <div>
                         <a href="javascript:;" class="product-copy-sp">Sao chép</a><br />
-                        <a href="javascript:;" class="product-remove-sp">Ẩn</a><br />
-                        <a href="javascript:;" class="product-open-sp">Hiển thị</a><br />
-                        <a href="javascript:;" class="product-remove-sp2">Xóa</a><br />
+                        @if (main.status != (int)ProductStatus.ACTIVE)
+                        {
+                            <a href="javascript:;" class="product-open-sp">Hiển thị</a>
+
+                            <br />
+
+                        }
+                        @if (main.status != (int)ProductStatus.DEACTIVE)
+                        {
+                            <a href="javascript:;" class="product-remove-sp">Ẩn</a>
+                            <br />
+                        }
+                        @if (main.status != (int)ProductStatus.REMOVE)
+                        {
+                            <a href="javascript:;" class="product-remove-sp2">Xóa</a>
+
+                            <br />
+                        }
                     </div>
 
                 </div>
@@ -85,8 +188,8 @@
                 var sub_attr_img = new List<string>();string html_sub_attr = "";
                 foreach (var variation_attributes_item in sub.variation_detail)
                 {
-                    var attribute = sub.attributes.Where(obj => obj?._id == variation_attributes_item.id).ToList();
-                    var attribute_detail = sub.attributes_detail.Where(obj => obj?.attribute_id == variation_attributes_item.id && obj?.name == variation_attributes_item.name).ToList();
+                    var attribute = sub.attributes.Where(obj => obj?._id == variation_attributes_item._id).ToList();
+                    var attribute_detail = sub.attributes_detail.Where(obj => obj?.attribute_id == variation_attributes_item._id && obj?.name == variation_attributes_item.name).ToList();
 
                    
                     if (attribute_detail != null && attribute_detail.Count > 0 && !string.IsNullOrEmpty(attribute_detail[0]?.img?.Trim()))
@@ -116,9 +219,9 @@
                         img_src_sub = StaticDomain + sub_attr_img[0];
                     }
                 }
-                <tr class="sub-product" data-id="@sub._id" data-main-id="@sub.parent_product_id" style="@(c>=2?"display:none;":"")">
-                    <td style="width: 0;">
-                    </td>
+                <tr class="sub-product" data-id="@sub._id" data-main-id="@sub.parent_product_id" style="@(c>2?"display:none;":"")">
+                    @*<td style="width: 0;">
+                    </td>*@
                     <td style="width: 100px;">
                         <div class="item-order">
                             <div class="img">
@@ -126,18 +229,36 @@
                             </div>
                             <div class="info">
                                 <h3 class="name-product"> Phân loại hàng:</h3>
-                                <div class="cat">@html_sub_attr</div>
+                                <div class="cat">@Html.Raw(html_sub_attr)</div>
                                 <div class="cat">@sub.sku</div>
                             </div>
                         </div>
                     </td>
+                    <td class="text-center"></td>
+                    <td class="text-center"></td>
                     <td class="text-center"></td>
                     <td class="text-center">@sub.amount.ToString("N0")</td>
                     <td class="text-center">@sub.quanity_of_stock.ToString("N0")</td>
                     <td class="text-center"></td>
                 </tr>
             }
+            @if (sub_by_main.Count() > 2)
+            {
+                                <tr class="sub-product sub-product-viewmore" data-main-id="@main._id" data-count="@sub_by_main.Count()">
+                    <td colspan="6" class="text-center">
+                        <a href="javascript:;" class="xemthem">
+                            <span>
+                                Xem thêm (còn <nw class="remain-sub">@(sub_by_main.Count()-2)</nw>  phân loại)
+                                <i class="icofont-simple-down"></i>
+                            </span>
+                        </a>
+                    </td>
+                </tr>
+            }
         }
     }
-    <div id="search-count" style="display:none;">@main_products.Count</div>
+    <tr style="display:none;"><td>
+            <input id="search-count" value="@count" />
+        </td>
+    </tr>
 }

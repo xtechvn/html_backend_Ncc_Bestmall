@@ -8,9 +8,10 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Utilities;
 using Utilities.Contants;
+using WEB.CMS.Models;
 using WEB.CMS.SUPPLIER.Models;
 
-namespace WEB.Adavigo.CMS.Service
+namespace WEB.BestMall.CMS.Service
 {
     public class IndentiferService
     {

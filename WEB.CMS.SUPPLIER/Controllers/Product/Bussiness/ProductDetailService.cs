@@ -1,7 +1,9 @@
-﻿using Entities.ViewModels.Products;
+﻿using Caching.RedisWorker;
+using Entities.ViewModels.Products;
 using Newtonsoft.Json;
+using Repositories.IRepositories;
 using Utilities.Contants.ProductV2;
-using WEB.CMS.SUPPLIER.Models.Product;
+using WEB.CMS.Models.Product;
 
 namespace WEB.CMS.Controllers.Product.Bussiness
 {
@@ -10,10 +12,10 @@ namespace WEB.CMS.Controllers.Product.Bussiness
         private readonly ProductDetailMongoAccess _productV2DetailMongoAccess;
         private readonly ProductSpecificationMongoAccess _productSpecificationMongoAccess;
         private readonly IConfiguration _configuration;
-        public ProductDetailService(IConfiguration configuration)
+        public ProductDetailService(IConfiguration configuration, ProductDetailMongoAccess productV2DetailMongoAccess, ProductSpecificationMongoAccess productSpecificationMongoAccess)
         {
-            _productV2DetailMongoAccess = new ProductDetailMongoAccess(configuration);
-            _productSpecificationMongoAccess = new ProductSpecificationMongoAccess(configuration);
+            _productV2DetailMongoAccess = productV2DetailMongoAccess;
+            _productSpecificationMongoAccess = productSpecificationMongoAccess;
             _configuration = configuration;
         }
 
@@ -109,14 +111,14 @@ namespace WEB.CMS.Controllers.Product.Bussiness
                         //-- Variation 1
                         model.variation_detail = new List<ProductDetailVariationAttributesMongoDbModel>()
                         {
-                            new ProductDetailVariationAttributesMongoDbModel(){id="0",name=item.variation_1_name.Trim()}
+                            new ProductDetailVariationAttributesMongoDbModel(){_id="0",name=item.variation_1_name.Trim()}
                         };
                         //--Attributes 2 & Attribute Detail 2 & Variation 2:
                         if (item.attribute_2_name != null && item.attribute_2_name.Trim() != "")
                         {
                             model.attributes.Add(new ProductAttributeMongoDbModel() { _id = "1", name = item.attribute_2_name.Trim() });
                             model.attributes_detail.Add(new ProductAttributeMongoDbModelItem() { attribute_id = "1", name = item.variation_2_name.Trim() });
-                            model.variation_detail.Add(new ProductDetailVariationAttributesMongoDbModel() { id = "1", name = item.variation_2_name.Trim() });
+                            model.variation_detail.Add(new ProductDetailVariationAttributesMongoDbModel() { _id = "1", name = item.variation_2_name.Trim() });
                         }
                        
                         //-- Check if main_products exists? :

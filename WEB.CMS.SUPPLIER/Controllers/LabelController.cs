@@ -25,7 +25,7 @@ namespace WEB.CMS.SUPPLIER.Controllers
         {
             try
             {
-                var list = await _labelRepository.Listing(0,txt_search, 1,20);
+                var list = await _labelRepository.Listing(0,txt_search,null, 1,20);
                 return new JsonResult(new
                 {
                     isSuccess = true,
