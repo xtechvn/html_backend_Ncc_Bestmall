@@ -21,3 +21,5 @@ desktop.ini
 /Utilities/bin
 /WEB.CMS.SUPPLIER/bin
 /WEB.CMS.SUPPLIER/obj
+WEB.CMS.SUPPLIER/Properties/PublishProfiles/FolderProfile.pubxml
+WEB.CMS.SUPPLIER/Properties/PublishProfiles/FolderProfile.pubxml.user
