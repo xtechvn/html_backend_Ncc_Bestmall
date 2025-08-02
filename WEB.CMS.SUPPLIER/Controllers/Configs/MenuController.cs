@@ -1,19 +1,11 @@
 ﻿using Caching.RedisWorker;
-using Entities;
 using Entities.ViewModels;
 using ENTITIES.ViewModels.Notify;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using Repositories.IRepositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Utilities;
 using Utilities.Contants;
-using WEB.Adavigo.CMS.Service;
 using WEB.CMS.SUPPLIER.Customize;
 
 namespace WEB.Adavigo.CMS.Controllers.Configs

@@ -11,22 +11,26 @@ namespace Utilities.Contants
         [Description("Chờ thanh toán")]
         CREATED_ORDER = 0,
 
+        [Description("Đã thanh toán")]
+        PAID = 6,
+
         [Description("Đang xử lý")]
-        CONFIRMED_SALE = 1,
+        PROCESSING = 1,
 
 
         [Description("Đang giao hàng")]
-        WAITING_FOR_OPERATOR = 2,
+        DELIVERY = 2,
 
- 
+        [Description("Giao thành công")]
+        FINISHED_DELIVERY = 5,
+
         [Description("Hoàn thành")]
         FINISHED = 3,
       
         [Description("Đã hủy")]
         CANCEL = 4, 
-        [Description("Giao thành công")]
-        FINISHED_DELIVERY = 5,
-       
+        
+        
 
     }
 
@@ -44,5 +48,24 @@ namespace Utilities.Contants
         [Description("Gạch nợ chưa đủ")]
         PAID_NOT_ENOUGH = 2,
 
+    }
+    public enum OrderRefundStatus
+    {
+        REQUESTED = 1,
+        CONFIRM = 2,
+        DONE = 4,
+        CANCEL=3
+
+    }
+    public enum ProductFlashSaleBadgeStatus
+    {
+        NORMAL = -1,
+        FEATURED_PRODUCT=1,
+        FEATURED_BRAND=2,
+        BESTCHOICE=3,
+        FAVOURITES=4,
+        PREMIUM=5,
+        SUPERSALE=6,
+        MOSTLY_SOLD=7
     }
 }

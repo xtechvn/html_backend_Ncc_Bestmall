@@ -32,4 +32,16 @@ public partial class Label
     public int? CreatedBy { get; set; }
 
     public int? UpdatedBy { get; set; }
+
+    public string Banner { get; set; }
+
+    public string Avatar { get; set; }
+
+    public string BannerMain { get; set; }
+
+    public string BannerSub { get; set; }
+
+    public int? Position { get; set; }
+
+    public int? ShopMallPosition { get; set; }
 }

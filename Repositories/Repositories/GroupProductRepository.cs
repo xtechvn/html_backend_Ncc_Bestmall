@@ -63,6 +63,8 @@ namespace Repositories.Repositories
                     entity.IsShowHeader = model.IsShowHeader;
                     entity.IsShowFooter = model.IsShowFooter;
                     entity.Code = model.Code;
+		    entity.ProductCount = model.ProductCount;
+                    entity.IsFlashSale = model.IsFlashSale;
                     await _GroupProductDAL.UpdateAsync(entity);
 
                     // Update children status
@@ -189,7 +191,7 @@ namespace Repositories.Repositories
             _strHtml.Append(@"<div class=""control"">");
             _strHtml.Append(@"<a class=""btn-add-group-product"" data-id=" + _parentModel.Id + "><img src=/images/icons/sql.png /></a>");
             _strHtml.Append(@"<a class=""btn-edit-group-product"" data-id=" + _parentModel.Id + "><img src=/images/icons/edit.png /></a>");
-            _strHtml.Append("<a class=\"btn-clearcache-group-product\"data-name=\""+ _parentModel.Name + "\" data-id=\"" + _parentModel.Id + "\"><img src=/images/icons/edit.png /></a>");
+           // _strHtml.Append("<a class=\"btn-clearcache-group-product\"data-name=\""+ _parentModel.Name + "\" data-id=\"" + _parentModel.Id + "\"><img src=/images/icons/edit.png /></a>");
             _strHtml.Append(@"</div>");
 
             if (_parentModel.Status == 1)
@@ -346,9 +348,8 @@ namespace Repositories.Repositories
         {
             try
             {
-                List<GroupProduct> cate_list = await _GroupProductDAL.GetAllAsync();
-                var _parentModel = cate_list.Where(s => s.ParentId == parent_id).OrderBy(x => x.OrderNo).ToList();
-                return _parentModel;
+                List<GroupProduct> cate_list =  _GroupProductDAL.GetByParentIdOrder(parent_id);
+                return cate_list;
             }
             catch (Exception ex)
             {
@@ -494,6 +495,7 @@ namespace Repositories.Repositories
         {
             return await _GroupProductDAL.IsGroupHeader(groups);
         }
+       
         public async Task<List<ProductGroupViewModel>> GetProductGroupByParentID(long parent_id, string url_static)
         {
             try
@@ -511,9 +513,8 @@ namespace Repositories.Repositories
         }
         public List<GroupProduct> Search(string keyword, int parent_id = 1)
         {
-            return _GroupProductDAL.Search(keyword, parent_id);
+            return  _GroupProductDAL.Search(keyword, parent_id);
         }
-
 
     }
 }

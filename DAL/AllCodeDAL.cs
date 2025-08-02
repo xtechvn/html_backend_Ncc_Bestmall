@@ -28,7 +28,7 @@ namespace DAL
             {
                 using (var _DbContext = new EntityDataContext(_connection))
                 {
-                    var detail = await _DbContext.Set<AllCode>().Where(n => n.CodeValue == codevalue).ToListAsync();
+                    var detail = await _DbContext.AllCodes.AsNoTracking().Where(n => n.CodeValue == codevalue).ToListAsync();
                     if (detail != null)
                     {
                         return detail;
@@ -89,7 +89,7 @@ namespace DAL
             {
                 using (var _DbContext = new EntityDataContext(_connection))
                 {
-                    var detail = _DbContext.Set<AllCode>().Where(n => n.Type == type).ToList();
+                    var detail = _DbContext.AllCodes.AsNoTracking().Where(n => n.Type == type).ToList();
                     if (detail != null)
                     {
                         return detail;
@@ -110,7 +110,7 @@ namespace DAL
             {
                 using (var _DbContext = new EntityDataContext(_connection))
                 {
-                    var detail = _DbContext.Set<AllCode>().Where(n => n.Type == type).FirstOrDefault();
+                    var detail = _DbContext.AllCodes.AsNoTracking().Where(n => n.Type == type).FirstOrDefault();
                     if (detail != null)
                     {
                         return detail;
@@ -239,6 +239,79 @@ namespace DAL
                 LogHelper.InsertLogTelegram("GetIDIfValueExists - AllCodeDAL: " + ex);
             }
             return null;
+        }
+        public int InsertAllcode(AllCode model)
+        {
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+            new SqlParameter("@Type", SqlDbType.VarChar, 30) { Value = model.Type },
+            new SqlParameter("@CodeValue", SqlDbType.SmallInt) { Value = model.CodeValue },
+            new SqlParameter("@Description", SqlDbType.NVarChar, 300) { Value = (object)model.Description ?? DBNull.Value },
+            new SqlParameter("@OrderNo", SqlDbType.SmallInt) { Value = (object)model.OrderNo ?? DBNull.Value },
+            new SqlParameter("@CreatedBy", SqlDbType.Int) { Value = model.CreatedBy }
+            };
+
+            return _DbWorker.ExecuteNonQuery("sp_InsertAllcode", parameters);
+        }
+        public int UpdateAllcode(AllCode model)
+        {
+            SqlParameter[] parameters = new SqlParameter[]
+            {
+            new SqlParameter("@Id", SqlDbType.Int) { Value = model.Id },
+            new SqlParameter("@Type", SqlDbType.VarChar, 30) { Value = model.Type },
+            new SqlParameter("@CodeValue", SqlDbType.SmallInt) { Value = model.CodeValue },
+            new SqlParameter("@Description", SqlDbType.NVarChar, 300) { Value = (object)model.Description ?? DBNull.Value },
+            new SqlParameter("@OrderNo", SqlDbType.SmallInt) { Value = (object)model.OrderNo ?? DBNull.Value },
+            new SqlParameter("@UpdatedBy", SqlDbType.Int) { Value = model.UpdatedBy },
+            };
+
+            return _DbWorker.ExecuteNonQuery("sp_UpdateAllcode", parameters);
+        }
+        public bool DeleteEmptyAllcodeDescription(string type)
+        {
+            try
+            {
+                using (var _DbContext = new EntityDataContext(_connection))
+                {
+                    var detail = _DbContext.AllCodes.AsNoTracking().Where(n => n.Type == type && (n.Description==null || n.Description=="")).ToList();
+
+                    if (detail != null && detail.Count>0)
+                    {
+                        _DbContext.AllCodes.RemoveRange(detail);
+
+                    }
+
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("GetByType - AllCodeDAL. " + ex);
+            }
+            return false;
+        }
+        public bool DeleteByType(string type)
+        {
+            try
+            {
+                using (var _DbContext = new EntityDataContext(_connection))
+                {
+                    var detail = _DbContext.AllCodes.AsNoTracking().Where(n => n.Type == type).ToList();
+
+                    if (detail != null && detail.Count > 0)
+                    {
+                        _DbContext.AllCodes.RemoveRange(detail);
+
+                    }
+
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("GetByType - AllCodeDAL. " + ex);
+            }
+            return false;
         }
     }
 }

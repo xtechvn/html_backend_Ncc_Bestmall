@@ -383,5 +383,16 @@ namespace Utilities.Contants
         public static string InsertLabel = "sp_InsertLabel";
         public static string UpdateLabel = "sp_UpdateLabel";
         public static string GetListLabels = "SP_GetListLabels";
+        public static string SP_UpdateSupplierStatus = "SP_UpdateSupplierStatus";
+
+
+        public static string SP_InsertUser = "SP_InsertUser";
+        public static string SP_UpdateUser = "SP_UpdateUser";
+
+        public static string SP_InsertFlashSale = "SP_InsertFlashSale";
+        public static string SP_UpdateFlashSale = "SP_UpdateFlashSale";
+        public static string SP_InsertFlashSaleProduct = "SP_InsertFlashSaleProduct";
+        public static string SP_UpdateFlashSaleProduct = "SP_UpdateFlashSaleProduct";
+        public static string SP_GetListFlashSale = "SP_GetListFlashSale";
     }
 }

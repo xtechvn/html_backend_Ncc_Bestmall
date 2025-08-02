@@ -9,7 +9,7 @@
 @{
     var data = Model.ListData;
     var Total = (TotalValueOrder)ViewBag.TotalValueOrder;
-
+    OrderViewSearchModel request = (OrderViewSearchModel)ViewBag.Request;
 
 }
 <div class="bg-white pd-16 radius10">
@@ -17,12 +17,15 @@
         <div class="row" style=" width: 100%; ">
             <input id="countOrder" value="@Model.TotalRecord" style="display:none" />
             <div class="tab-default col-md-9 mb0 mt10">
-                <a href="javascript:;" onclick="_ordersCMS.OnSearchStatus(99)" id="countSttAll" class="active">Tất cả đơn hàng (@Model.TotalRecord) </a>
-                <a href="javascript:;" onclick="_ordersCMS.OnSearchStatus(1)" id="countSttCheck">Đang tư vấn </a>
-                <a href="javascript:;" onclick="_ordersCMS.OnSearchStatus(2)" id="countSttNotDone">Chưa khởi hành </a>
-                <a href="javascript:;" onclick="_ordersCMS.OnSearchStatus(3)" id="countSttDone">Đã khởi hành </a>
-                <a href="javascript:;" onclick="_ordersCMS.OnSearchStatus(4)" id="countSttErr">Đơn hàng lỗi </a>
-                <a href="javascript:;" onclick="_ordersCMS.OnSearchStatus(0)" id="countSttNews">Đơn chờ nhận triển khai</a>
+                <a href="javascript:;" data-status="" data-status-tab="99" class="order-search-tab @(request.Status==null|| request.Status.Count<=0?"active":"")">Tất cả đơn hàng @(request.Status == null || request.Status.Count <= 0 ? "(" + @Model.TotalRecord + ")" : "")  </a>
+                <a href="javascript:;" data-status="0" data-status-tab="99" class="order-search-tab @(request.Status!=null &&request.Status.Contains(0)?"active":"")">Tạo mới @(request.Status != null && request.Status.Contains(0) ? "(" + @Model.TotalRecord + ")" : "")</a>
+                <a href="javascript:;" data-status="6" data-status-tab="99" class="order-search-tab @(request.Status!=null &&request.Status.Contains(6)?"active":"")">Đã thanh toán @(request.Status != null && request.Status.Contains(6) ? "(" + @Model.TotalRecord + ")" : "")</a>
+                <a href="javascript:;" data-status="1" data-status-tab="99" class="order-search-tab @(request.Status!=null &&request.Status.Contains(1)?"active":"")">Đang xử lý @(request.Status != null && request.Status.Contains(1) ? "(" + @Model.TotalRecord + ")" : "")</a>
+                <a href="javascript:;" data-status="2" data-status-tab="99" class="order-search-tab @(request.Status!=null &&request.Status.Contains(2)?"active":"")">Đang giao hàng @(request.Status != null && request.Status.Contains(2) ? "(" + @Model.TotalRecord + ")" : "")</a>
+                <a href="javascript:;" data-status="5" data-status-tab="99" class="order-search-tab @(request.Status!=null &&request.Status.Contains(5)?"active":"")">Giao hàng thành công @(request.Status != null && request.Status.Contains(5) ? "(" + @Model.TotalRecord + ")" : "")</a>
+                <a href="javascript:;" data-status="3" data-status-tab="99" class="order-search-tab @(request.Status!=null &&request.Status.Contains(3)?"active":"")">Hoàn thành@(request.Status != null && request.Status.Contains(3) ? "(" + @Model.TotalRecord + ")" : "")</a>
+                <a href="javascript:;" data-status="4" data-status-tab="99" class="order-search-tab @(request.Status!=null &&request.Status.Contains(4)?"active":"")">Hủy @(request.Status != null && request.Status.Contains(4) ? "(" + @Model.TotalRecord + ")" : "")</a>
+                <a href="javascript:;" data-status="-1" data-status-tab="4" class="order-search-tab @(request.Status!=null &&request.Status.Contains(-1)?"active":"")">Đơn hàng lỗi hệ thống @(request.Status != null && request.Status.Contains(-1) ? "(" + @Model.TotalRecord + ")" : "")</a>
             </div>
             <div class="col-md-3 text-right mt10">
                 <button type="submit" class="btn btn-default" style="" onclick="_order_manual.CreateOrderManual()">Tạo đơn hàng</button>
@@ -93,27 +96,23 @@
                                 </td>
                                 <td class="text-right">
                                     <div class="green">@item.Payment.ToString("#,##0")/</div>
-                                    <div class="red">@(item.Amount == 0 ? "0" : item.Amount.ToString("#,##"))</div>
+                                    <div class="red">@((double)item.Amount == null ? "0" : ((double)item.Amount).ToString("#,##"))</div>
                                 </td>
-                                <td>@item.Profit.ToString("#,##")</td>
+                                <td>@(((double)item.Profit).ToString("#,##"))</td>
                                 <td>
                                     @switch (item.StatusCode)
                                     {
                                         case (int)(OrderStatus.CREATED_ORDER):
-                                        case (int)(OrderStatus.CONFIRMED_SALE):
                                             {
                                                 <span class="status-oranger">@item.Status</span>
                                             }
                                             break;
-                                        case (int)(OrderStatus.WAITING_FOR_OPERATOR):
-
-                                            {
-                                                <span class="status-green">@item.Status</span>
-
-                                            }
-                                            break;
-                         
+                                        case (int)(OrderStatus.PAID):
+                                        case (int)(OrderStatus.DELIVERY):
+                                        case (int)(OrderStatus.PROCESSING):
+                                        case (int)(OrderStatus.FINISHED_DELIVERY):
                                         case (int)(OrderStatus.FINISHED):
+
                                             {
                                                 <span class="status-green">@item.Status</span>
                                             }
@@ -127,26 +126,52 @@
                                     }
                                 </td>
                                 <td>
-                                    <div>@item.CarrierTypeName</div>
-                                    <div>@item.ShippingTypeName</div>
+                                    <div>
+                                        @switch (item.CarrierId)
+                                        {
+                                            default:
+                                                {
+
+                                                }
+                                                break;
+                                            case 1:
+                                                {
+                                                    <nw>Khách hàng lấy tại BestMall</nw>
+                                                }
+                                                break;
+                                            case 2:
+                                                {
+                                                    <nw>Ninja Van</nw>
+                                                }
+                                                break;
+                                            case 3:
+                                                {
+                                                    <nw>Viettel Post</nw>
+
+                                                }
+                                                break;
+
+                                        }
+                                    </div>
+                                    <div>@item.ShippingTypeCode</div>
                                     <div>@item.ShippingCode</div>
                                 </td>
                                 <td>
-                                    @if (item.PaymentStatus != "")
+                                    @if (item.PaymentStatus >0)
                                     {
-                                        @if (Convert.ToInt32(item.PaymentStatus) == (int)PaymentStatus.UNPAID)
+                                        @if (item.PaymentStatus == (int)PaymentStatus.UNPAID)
                                         {
                                             <div class="status-oranger">
                                                 @item.PaymentStatusName
                                             </div>
                                         }
-                                        @if (Convert.ToInt32(item.PaymentStatus) == (int)PaymentStatus.PAID)
+                                        else if (item.PaymentStatus == (int)PaymentStatus.PAID)
                                         {
                                             <div class="status-green">
                                                 @item.PaymentStatusName
                                             </div>
                                         }
-                                        @if (Convert.ToInt32(item.PaymentStatus) == (int)PaymentStatus.PAID_NOT_ENOUGH)
+                                        else if(item.PaymentStatus == (int)PaymentStatus.PAID_NOT_ENOUGH)
                                         {
                                             <div class="status-blue">
                                                 @item.PaymentStatusName

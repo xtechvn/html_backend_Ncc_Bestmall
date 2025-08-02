@@ -5,11 +5,13 @@ using Entities.ViewModels;
 using Entities.ViewModels.Funding;
 using Entities.ViewModels.SupplierConfig;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Utilities;
 using Utilities.Contants;
 
@@ -159,6 +161,11 @@ namespace DAL.Funding
                     new SqlParameter("@Address", model.Address ?? (object)DBNull.Value),
                     new SqlParameter("@CreatedBy", model.CreatedBy),
                     new SqlParameter("@CreatedDate", DateTime.Now),
+                    new SqlParameter("@ProvinceId", model.ProvinceId),
+                    new SqlParameter("@DistrictId", model.DistrictId),
+                    new SqlParameter("@WardId", model.WardId),
+                     new SqlParameter("@BannerMain", model.BannerMain?? (object)DBNull.Value),
+                    new SqlParameter("@BannerSub", model.BannerSub?? (object)DBNull.Value),
                 };
                 return _DbWorker.ExecuteNonQuery(StoreProcedureConstant.SP_InsertSupplier, objParam);
             }
@@ -181,7 +188,12 @@ namespace DAL.Funding
                     new SqlParameter("@Email", model.Email ?? (object)DBNull.Value),
                     new SqlParameter("@Phone", model.Phone ?? (object)DBNull.Value),
                     new SqlParameter("@Address", model.Address ?? (object)DBNull.Value),
-                    new SqlParameter("@UpdatedBy ", model.UpdatedBy)
+                    new SqlParameter("@UpdatedBy ", model.UpdatedBy),
+                       new SqlParameter("@ProvinceId", model.ProvinceId),
+                    new SqlParameter("@DistrictId", model.DistrictId),
+                    new SqlParameter("@WardId", model.WardId),
+                    new SqlParameter("@BannerMain", model.BannerMain?? (object)DBNull.Value),
+                    new SqlParameter("@BannerSub", model.BannerSub?? (object)DBNull.Value),
                 };
                 return _DbWorker.ExecuteNonQuery(StoreProcedureConstant.SP_UpdateSupplier, objParam_contractPay);
             }
@@ -448,5 +460,38 @@ namespace DAL.Funding
             }
         }
         #endregion
+        public int UpdateSupplierStatus(int new_status,int supplier_id)
+        {
+            try
+            {
+                SqlParameter[] objParam_contractPay = new SqlParameter[]
+                {
+                    new SqlParameter("@SupplierId", supplier_id),
+                    new SqlParameter("@Status",new_status),
+                };
+                return _DbWorker.ExecuteNonQuery(StoreProcedureConstant.SP_UpdateSupplierStatus, objParam_contractPay);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("UpdateSupplier - SupplierDAL. " + ex);
+                return -1;
+            }
+        }
+        public async Task<List<Supplier>> GetAllSuplier()
+        {
+            try
+            {
+                using (var _DbContext = new EntityDataContext(_connection))
+                {
+
+                    return await _DbContext.Suppliers.AsNoTracking().Where(x => x.Status != 2).ToListAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("GetAllSuplier - LabelDAL: " + ex);
+                return null;
+            }
+        }
     }
 }

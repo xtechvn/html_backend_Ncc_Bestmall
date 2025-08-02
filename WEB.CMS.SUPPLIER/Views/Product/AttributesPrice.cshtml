@@ -23,16 +23,16 @@
                 <th class="th-attributes th-attribute-0" style="min-width: 100px;">Phân loại 1</th>
 
             }
-            <th class="th-price" style="min-width: 150px;">Giá</th>
-            <th class="th-profit" style="min-width: 150px;">Lợi nhuận</th>
-            <th class="th-amount" style="min-width: 150px;">Giá bán</th>
-            <th class="th-stock" style="min-width: 100px;">Kho hàng</th>
+            <th class="th-price" style="min-width: 150px;">Giá<sup class="red">*</sup></th>
+            <th class="th-profit" style="min-width: 150px;">Lợi nhuận<sup class="red">*</sup></th>
+            <th class="th-amount" style="min-width: 150px;">Giá bán<sup class="red">*</sup></th>
+            <th class="th-stock" style="min-width: 100px;">Kho hàng<sup class="red">*</sup></th>
             <th class="th-weight" style="@((is_one_weight==false ||is_one_weight==null)?"":"display:none;") min-width: 100px; ">
-                Cân nặng<br>
+                Cân nặng<sup class="red">*</sup><br>
                 (Sau khi đóng gói)
             </th>
             <th class="th-dismension" style="@((is_one_weight==false ||is_one_weight==null)?"":"display:none;") min-width: 300px;">
-                Kích thước đóng gói<br>(Phí vận chuyển thực tế sẽ thay đổi nếu bạn nhập sai kích thước)
+                Kích thước đóng gói<sup class="red">*</sup><br>(Phí vận chuyển thực tế sẽ thay đổi nếu bạn nhập sai kích thước)
             </th>
             <th class="th-sku">SKU phân loại</th>
         </tr>
@@ -53,26 +53,26 @@
                         foreach (var a2 in attr_2)
                         {
 
-                            var sub_selected = sub_product.Where(x => x.variation_detail != null).FirstOrDefault(x => x.variation_detail.Any(v => v.name.ToLower().Trim() == a1.name.ToLower().Trim())
-                            && x.variation_detail.Any(v => v.name.ToLower().Trim() == a2.name.ToLower().Trim()));
+                            var sub_selected = sub_product.Where(x => x.variation_detail != null).FirstOrDefault(x => x.variation_detail.Any(v => v.name != null && v.name.ToLower().Trim() == a1.name.ToLower().Trim())
+                            && x.variation_detail.Any(v => v.name != null && v.name.ToLower().Trim() == a2.name.ToLower().Trim()));
                             <tr class="@(is_first==false?"tr-main":"tr-sub")" data-attribute-0="@a1.name" data-attribute-1="@a2.name" data-id="@(sub_selected != null && sub_selected._id!=null ? sub_selected._id:"")">
                                 <td rowspan="@attr_2.Count()" style="@(is_first==false?"":"display:none;")">@a1.name</td>
                                 <td>@a2.name</td>
                                 <td class="td-price">
                                     <div class="form-group mb-0 price">
-                                        <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price>0 ? sub_selected.price.ToString("N0"):"")">
+                                        <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price > 0 ? sub_selected.price.ToString("N0") : "")" readonly>
                                         <span class="note">đ</span>
                                     </div>
                                 </td>
                                 <td class="td-profit">
                                     <div class="form-group mb-0 price">
-                                        <input type="text" class="form-control input-price" placeholder="Lợi nhuận" value="@(sub_selected != null && sub_selected.profit>0 ? sub_selected.profit.ToString("N0"):"")">
+                                        <input type="text" class="form-control input-price" placeholder="Lợi nhuận" value="@(sub_selected != null && sub_selected.profit>=0 ? sub_selected.profit.ToString("N0"):"")">
                                         <span class="note">đ</span>
                                     </div>
                                 </td>
                                 <td class="td-amount">
                                     <div class="form-group mb-0 price">
-                                        <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0"):"")" readonly>
+                                        <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0"):"")" >
                                         <span class="note">đ</span>
                                     </div>
                                 </td>
@@ -115,24 +115,24 @@
                     }
                     else
                     {
-                        var sub_selected = sub_product.FirstOrDefault(x => x.variation_detail.Any(v => v.name.Contains(a1.name)));
+                        var sub_selected = sub_product.FirstOrDefault(x => x.variation_detail.Any(v => v.name!=null && v.name.Contains(a1.name)));
                         <tr class="@(is_first==false?"tr-main":"tr-sub")" data-attribute-0="@a1.name" data-id="@(sub_selected != null && sub_selected._id != null ? sub_selected._id : "")">
                             <td>@a1.name</td>
                             <td class="td-price">
                                 <div class="form-group mb-0 price">
-                                    <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price>0 ? sub_selected.price.ToString("N0"):"")">
+                                    <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price > 0 ? sub_selected.price.ToString("N0") : "")" readonly>
                                     <span class="note">đ</span>
                                 </div>
                             </td>
                             <td class="td-profit">
                                 <div class="form-group mb-0 price">
-                                    <input type="text" class="form-control input-price" placeholder="Lợi nhuận" value="@(sub_selected != null && sub_selected.profit>0 ? sub_selected.profit.ToString("N0"):"")">
+                                    <input type="text" class="form-control input-price" placeholder="Lợi nhuận" value="@(sub_selected != null && sub_selected.profit>=0 ? sub_selected.profit.ToString("N0"):"")">
                                     <span class="note">đ</span>
                                 </div>
                             </td>
                             <td class="td-amount">
                                 <div class="form-group mb-0 price">
-                                    <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0"):"")" readonly>
+                                    <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0"):"")" >
                                     <span class="note">đ</span>
                                 </div>
                             </td>

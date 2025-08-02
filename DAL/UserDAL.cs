@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Utilities;
+using Utilities.Contants;
 
 namespace DAL
 {
@@ -331,7 +332,7 @@ namespace DAL
             {
                 using (var _DbContext = new EntityDataContext(_connection))
                 {
-                    return await _DbContext.Users.AsNoTracking().Where(s => s.UserName.ToLower().Contains(txt_search.ToLower())).ToListAsync();
+                    return await _DbContext.Users.AsNoTracking().Where(s => s.UserName.ToLower().Contains(txt_search.ToLower())||s.FullName.ToLower().Contains(txt_search.ToLower())).ToListAsync();
                 }
             }
             catch (Exception ex)
@@ -535,6 +536,117 @@ namespace DAL
             {
                 LogHelper.InsertLogTelegram("CountUser - UserDAL: " + ex);
                 return -1;
+            }
+        }
+        public async Task<List<User>> GetBySuplierId(int suplier_id)
+        {
+            try
+            {
+                using (var _DbContext = new EntityDataContext(_connection))
+                {
+                    return await _DbContext.Users.AsNoTracking().Where(s => s.SupplierId==suplier_id).ToListAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("GetBySuplierId - UserDAL: " + ex);
+                return new List<User>();
+            }
+        }
+        public int InsertUser(User user)
+        {
+            try
+            {
+                SqlParameter[] objParam = new SqlParameter[]
+                {
+            new SqlParameter("@UserMapId", (object)user.UserMapId ?? DBNull.Value),
+            new SqlParameter("@UserName", user.UserName),
+            new SqlParameter("@FullName", (object)user.FullName ?? DBNull.Value),
+            new SqlParameter("@Password", user.Password),
+            new SqlParameter("@ResetPassword", user.ResetPassword),
+            new SqlParameter("@Phone", (object)user.Phone ?? DBNull.Value),
+            new SqlParameter("@BirthDay", (object)user.BirthDay ?? DBNull.Value),
+            new SqlParameter("@Gender", (object)user.Gender ?? DBNull.Value),
+            new SqlParameter("@Email", (object)user.Email ?? DBNull.Value),
+            new SqlParameter("@Avata", (object)user.Avata ?? DBNull.Value),
+            new SqlParameter("@Address", (object)user.Address ?? DBNull.Value),
+            new SqlParameter("@Status", user.Status),
+            new SqlParameter("@Note", (object)user.Note ?? DBNull.Value),
+            new SqlParameter("@CreatedBy", (object)user.CreatedBy ?? DBNull.Value),
+            new SqlParameter("@CreatedOn", (object)user.CreatedOn ?? DBNull.Value),
+            new SqlParameter("@ModifiedBy", (object)user.ModifiedBy ?? DBNull.Value),
+            new SqlParameter("@ModifiedOn", (object)user.ModifiedOn ?? DBNull.Value),
+            new SqlParameter("@Manager", (object)user.Manager ?? DBNull.Value),
+            new SqlParameter("@DepartmentId", (object)user.DepartmentId ?? DBNull.Value),
+            new SqlParameter("@Level", (object)user.Level ?? DBNull.Value),
+            new SqlParameter("@UserPositionId", (object)user.UserPositionId ?? DBNull.Value),
+            new SqlParameter("@CompanyType", (object)user.CompanyType ?? DBNull.Value),
+            new SqlParameter("@SupplierId", (object)user.SupplierId ?? DBNull.Value),
+                };
+
+
+                return _DbWorker.ExecuteNonQuery("SP_InsertUser", objParam); ;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("InsertUser - UserDAL: " + ex.ToString());
+                return -1;
+            }
+        }
+        public int UpdateUser(User user)
+        {
+            try
+            {
+                SqlParameter[] objParam = new SqlParameter[]
+                {
+            new SqlParameter("@Id", user.Id), // Đảm bảo User.Id có giá trị khi update
+            new SqlParameter("@UserMapId", (object)user.UserMapId ?? DBNull.Value),
+            new SqlParameter("@UserName", user.UserName),
+            new SqlParameter("@FullName", (object)user.FullName ?? DBNull.Value),
+            new SqlParameter("@Password", user.Password),
+            new SqlParameter("@ResetPassword", user.ResetPassword),
+            new SqlParameter("@Phone", (object)user.Phone ?? DBNull.Value),
+            new SqlParameter("@BirthDay", (object)user.BirthDay ?? DBNull.Value),
+            new SqlParameter("@Gender", (object)user.Gender ?? DBNull.Value),
+            new SqlParameter("@Email", (object)user.Email ?? DBNull.Value),
+            new SqlParameter("@Avata", (object)user.Avata ?? DBNull.Value),
+            new SqlParameter("@Address", (object)user.Address ?? DBNull.Value),
+            new SqlParameter("@Status", user.Status),
+            new SqlParameter("@Note", (object)user.Note ?? DBNull.Value),
+            new SqlParameter("@CreatedBy", (object)user.CreatedBy ?? DBNull.Value),
+            new SqlParameter("@CreatedOn", (object)user.CreatedOn ?? DBNull.Value),
+            new SqlParameter("@ModifiedBy", (object)user.ModifiedBy ?? DBNull.Value),
+            new SqlParameter("@ModifiedOn", (object)user.ModifiedOn ?? DBNull.Value),
+            new SqlParameter("@Manager", (object)user.Manager ?? DBNull.Value),
+            new SqlParameter("@DepartmentId", (object)user.DepartmentId ?? DBNull.Value),
+            new SqlParameter("@Level", (object)user.Level ?? DBNull.Value),
+            new SqlParameter("@UserPositionId", (object)user.UserPositionId ?? DBNull.Value),
+            new SqlParameter("@CompanyType", (object)user.CompanyType ?? DBNull.Value),
+            new SqlParameter("@SupplierId", (object)user.SupplierId ?? DBNull.Value),
+                };
+
+                return _DbWorker.ExecuteNonQuery("SP_UpdateUser", objParam);
+
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("UpdateUser - UserDAL: " + ex.ToString());
+                return -1;
+            }
+        }
+        public async Task<User> GetByUserNameCMSCore(string input)
+        {
+            try
+            {
+                using (var _DbContext = new EntityDataContext(_connection))
+                {
+                    return await _DbContext.Users.FirstOrDefaultAsync(s => s.UserName.Equals(input));
+                }
+            }
+            catch (Exception ex)
+            {
+                LogHelper.InsertLogTelegram("GetByUserNameCMSCore - UserDAL: " + ex);
+                return null;
             }
         }
 

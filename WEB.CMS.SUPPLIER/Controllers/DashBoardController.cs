@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Repositories.IRepositories;
 using System.Data;
 using Utilities;
-using WEB.Adavigo.CMS.Service;
+using WEB.BestMall.CMS.Service;
 using WEB.CMS.SUPPLIER.Customize;
 
 namespace WEB.CMS.SUPPLIER.Controllers
