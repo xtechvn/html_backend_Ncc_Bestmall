@@ -238,7 +238,7 @@ namespace Utilities
                 string random_int_begin = new Random().Next(0, 99999999).ToString(new string('0', 8));
                 string random_int_last = new Random().Next(0, 99999999).ToString(new string('0', 8));
                 // 12345678_55_minh.nq_11111111_minhnguyen@BestMall.vn
-                string base_text = random_int_begin.Trim() + "_" + client_detail.Entity.Id + "_" + client_detail.Entity.UserName.Trim() + "_" + random_int_last.Trim() + "_" + client_detail.Entity.Email.Trim();
+                string base_text = random_int_begin.Trim() + "_" + client_detail.Entity.Id + "_" + client_detail.Entity.UserName.Trim() + "_" + random_int_last.Trim() + "_" + (client_detail.Entity.Email??"").Trim();
                 byte[] base_text_in_bytes = System.Text.Encoding.ASCII.GetBytes(base_text);
                 byte[] hash_text_sha256 = sHA256.ComputeHash(base_text_in_bytes);
                 SecretKey = Base32OTPEncoding.ToString(hash_text_sha256);

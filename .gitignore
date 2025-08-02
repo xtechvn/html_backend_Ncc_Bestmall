@@ -21,3 +21,5 @@ desktop.ini
 /Utilities/bin
 /WEB.CMS.SUPPLIER/bin
 /WEB.CMS.SUPPLIER/obj
+/WEB.CMS.SUPPLIER/Properties
+WEB.CMS.SUPPLIER/WEB.CMS.SUPPLIER.csproj.user
