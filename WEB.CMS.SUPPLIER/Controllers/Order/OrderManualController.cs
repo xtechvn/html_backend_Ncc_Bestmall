@@ -44,7 +44,7 @@ namespace WEB.CMS.Controllers.Order
             _redisConn.Connect();
             _shippingCarrierService = new ShippingCarrierService(configuration, _redisConn, locationESService   );
             _elasticService = elasticService;
-            _viettelPostService= viettelPostService;
+            _viettelPostService= viettelPostService; 
         }
         [HttpPost]
         public IActionResult CreateOrderManual()
