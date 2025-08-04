@@ -520,7 +520,7 @@ namespace WEB.CMS.Controllers
                 {
                 }
                 string FilePath = Path.Combine(_UploadDirectory, _FileName);
-                searchModel.pageSize = -1;
+                searchModel.pageSize = 500000;
                 searchModel.PageIndex = -1;
                 int SupplierId = 0;
                 if (HttpContext.User.FindFirst("SupplierId") != null)
