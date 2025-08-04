@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Entities.ViewModels
 {
-    public class OrderViewModel:Order
+    public class OrderViewModel : Order
     {
 
         public string StartDate { get; set; }
@@ -27,7 +27,7 @@ namespace Entities.ViewModels
         public string SalerGroupName { get; set; }
         public string PaymentTypeName { get; set; }
         public double TotalDisarmed { get; set; }
-        public double TotalAmount{ get; set; }
+        public double TotalAmount { get; set; }
         public double TotalNeedPayment { get; set; }
         public string UsUpdateName { get; set; }
         public string CreatedName { get; set; }
@@ -44,6 +44,10 @@ namespace Entities.ViewModels
         public string ShippingTypeName { get; set; }
         public string CarrierTypeName { get; set; }
         public List<ProductMongoDbModel> ListProduct { get; set; }
+        public string ProvinceName { get; set; }
+        public string DistrictName { get; set; }
+        public string WardName { get; set; }
+
     }
     public class TotalValueOrder
     {
