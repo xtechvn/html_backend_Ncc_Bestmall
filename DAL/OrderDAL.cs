@@ -122,8 +122,17 @@ namespace DAL
 
                 objParam[23] = new SqlParameter("@OrderId", searchModel.BoongKingCode);
                 objParam[24] = new SqlParameter("@CarrierId", searchModel.CarrierId);
-                objParam[25] = new SqlParameter("@SupplierId", searchModel.SupplierId??(object)DBNull.Value);
+                objParam[25] = new SqlParameter("@SupplierId", searchModel.SupplierId>0? searchModel.SupplierId:(object)DBNull.Value);
+                if (searchModel.SupplierId <=0)
+                {
+                    objParam[25] = new SqlParameter("@PaymentStatus", DBNull.Value);
 
+                }
+                else
+                {
+                    objParam[25] = new SqlParameter("@PaymentStatus", searchModel.PaymentStatus);
+
+                }
 
                 return _DbWorker.GetDataTable(proc, objParam);
             }
