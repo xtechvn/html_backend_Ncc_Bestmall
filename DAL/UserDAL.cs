@@ -640,7 +640,7 @@ namespace DAL
             {
                 using (var _DbContext = new EntityDataContext(_connection))
                 {
-                    return await _DbContext.Users.FirstOrDefaultAsync(s => s.UserName.Equals(input));
+                    return await _DbContext.Users.FirstOrDefaultAsync(s => s.UserName.Equals(input) && s.Status==0);
                 }
             }
             catch (Exception ex)
