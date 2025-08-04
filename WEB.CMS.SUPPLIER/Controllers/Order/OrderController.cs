@@ -97,6 +97,7 @@ namespace WEB.CMS.Controllers
                     SupplierId = Convert.ToInt32(HttpContext.User.FindFirst("SupplierId").Value);
                 }
                 searchModel.SupplierId = SupplierId;
+                LogHelper.InsertLogTelegram("Search - OrderController: "+ searchModel.SupplierId);
 
                 model = await _orderRepository.GetList(searchModel);
                 if (model != null && model.ListData != null && model.ListData.Count > 0)
