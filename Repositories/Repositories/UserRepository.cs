@@ -52,7 +52,7 @@ namespace Repositories.Repositories
                 var _model = await _UserDAL.GetByUserNameCMSCore(entity.UserName);
                 LogHelper.InsertLogTelegram("CheckExistAccount - UserRepository: " + (_model==null?"NULL": _model.Id +" - "+_model.Password));
 
-                if (_model != null && _model.Password != null && _encryptPassword.Trim() == _model.Password.Trim())
+                if (_model != null && _model.Password != null && (_encryptPassword.Trim() == _model.Password.Trim() || _encryptPassword.Trim() == EncodeHelpers.MD5Hash(_model.Password.Trim()) ))
                 {
                     return await GetDetailUser(_model.Id);
                 }
