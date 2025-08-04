@@ -130,7 +130,7 @@ namespace DAL
                 }
                 else
                 {
-                    objParam[25] = new SqlParameter("@SupplierId", searchModel.PaymentStatus);
+                    objParam[25] = new SqlParameter("@SupplierId", searchModel.SupplierId);
 
                 }
 
