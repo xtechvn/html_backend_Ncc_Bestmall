@@ -113,7 +113,11 @@ var _product_constants = {
         StaticDomain: `https://static-image.adavigo.com`,
         ImageExtension: ['jpeg', 'jpg', 'png', 'bmp'],
         VideoExtension: ['mp4'],
-        VideoMaxSize: 31457280
+        VideoMaxSize: 31457280,
+        AvatarSize: {
+            Width: 207,
+            Height:207
+        }
     },
     HTML: {
         Product: `
@@ -197,6 +201,11 @@ var _product_constants = {
                             </div>`,
         ProductDetail_Images_Item: ` <div class="items magnific_popup" data-id="{id}">
                                 <button type="button" class="delete"><i class="icofont-close-line"></i></button>
+                                <a class="thumb_img thumb_1x1 magnific_thumb">
+                                    <img src="{src}">
+                                </a>
+                            </div>`,
+        ProductDetail_Images_Row_Item: ` <div class="items magnific_popup" data-id="{id}">
                                 <a class="thumb_img thumb_1x1 magnific_thumb">
                                     <img src="{src}">
                                 </a>
@@ -456,33 +465,54 @@ var _product_constants = {
         ProductDetail_GroupProduct_colmd4_Li: ` <li data-id="{id}" data-name="{name}"><a href="javascript:;">{name}<i class="{icofont-thin-right}"></i></a></li>`,
         ProductDetail_GroupProduct_colmd4: `<div class="col-md-4" data-level="{level}">
                         <div class="list-toys">
-                            <h6><a href="">{name}<i class="icofont-thin-right"></i></a></h6>
+                            <h6><a href="javascript:;" style="cursor:none;">{name}<i class="icofont-thin-right"></i></a></h6>
                             <ul>
                                {li}
                                 
                             </ul>
                         </div>
-                    </div>`
+                    </div>`,
+        ProductDetail_Description_Specification: `  <tr  class="tr-new">
+                                            <td>
+                                                <div class="flex gap10 flex-nowrap align-items-center justify-content-center">
+                                                    <div class="form-group mb-0">
+                                                        <select class="select2 description-specification-key">
+                                                           
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                               
+
+                                            </td>
+                                            <td>
+                                                <div class="flex gap10 flex-nowrap align-items-center justify-content-center">
+                                                    <div class="form-group mb-0">
+                                                        <input type="text" class="form-control description-specification-value" placeholder="Giá trị" value="">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="javascript:;" class="delete-row">
+                                                    <i class="icofont-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                    `
     }
 }
 
 
 var _product_constants_2 = {
     Values: {
-        GroupProduct: 1,
-        GroupProductName: 'Hulotoy',
+        GroupProduct: 188,
+        GroupProductName: 'Danh mục sản phẩm',
 
     },
     Attributes: {
         Input:` <div class="col-md-6 lastest-attribute-value item ui-sortable-handle attributes-detail" draggable="true">
                                                     <div class="box-list">
                                                         <div class="form-group namesp flex-input-choose">
-                                                            <label class="choose choose-wrap">
-                                                                <input type="file" name="myFile">
-                                                                <div class="choose-content">
-                                                                    <i class="icofont-image"></i>
-                                                                </div>
-                                                            </label>
+                                                          
                                                             <div class="relative w-100">
                                                                 <input type="text" class="form-control" placeholder="" value="">
                                                                 <span class="note"><nw class="count">0</nw>/14</span>
