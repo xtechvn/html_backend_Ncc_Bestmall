@@ -120,8 +120,28 @@ namespace DAL
 
                 }
 
-                objParam[23] = new SqlParameter("@OrderId", searchModel.BoongKingCode);
-                objParam[24] = new SqlParameter("@CarrierId", searchModel.CarrierId);
+                if (searchModel.BoongKingCode == null)
+                {
+                    objParam[23] = new SqlParameter("@OrderId", DBNull.Value);
+
+                }
+                else
+                {
+                    objParam[23] = new SqlParameter("@OrderId", searchModel.BoongKingCode);
+
+                }
+                // objParam[23] = new SqlParameter("@OrderId", searchModel.BoongKingCode);
+                if (searchModel.CarrierId == null)
+                {
+                    objParam[24] = new SqlParameter("@OrderId", DBNull.Value);
+
+                }
+                else
+                {
+                    objParam[24] = new SqlParameter("@OrderId", searchModel.CarrierId);
+
+                }
+                // objParam[24] = new SqlParameter("@CarrierId", searchModel.CarrierId);
                 //objParam[25] = new SqlParameter("@SupplierId", searchModel.SupplierId>0? searchModel.SupplierId:(object)DBNull.Value);
                 if (searchModel.SupplierId <=0)
                 {
