@@ -50,6 +50,8 @@ namespace Repositories.Repositories
             {
                 var _encryptPassword = EncodeHelpers.MD5Hash(entity.Password);
                 var _model = await _UserDAL.GetByUserNameCMSCore(entity.UserName);
+                LogHelper.InsertLogTelegram("CheckExistAccount - UserRepository: " + (_model==null?"NULL": _model.Id +" - "+_model.Password));
+
                 if (_model != null && _model.Password != null && _encryptPassword.Trim() == _model.Password.Trim())
                 {
                     return await GetDetailUser(_model.Id);
