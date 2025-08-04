@@ -207,7 +207,7 @@ namespace WEB.CMS.Models.Product
                 return null;
             }
         }
-        public async Task<long> CountListing(string keyword = "", int group_id = -1, int status = -1)
+        public async Task<long> CountListing(string keyword = "", int group_id = -1, int status = -1, int SupplierId = 0)
         {
             try
             {
@@ -225,6 +225,11 @@ namespace WEB.CMS.Models.Product
                 if (group_id > 0)
                 {
                     filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, new BsonRegularExpression($@"\b{group_id}\b"));
+
+                }
+                if (SupplierId > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, SupplierId);
 
                 }
                 if (status > 0)
