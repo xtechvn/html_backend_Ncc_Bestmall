@@ -125,12 +125,12 @@ namespace DAL
                 //objParam[25] = new SqlParameter("@SupplierId", searchModel.SupplierId>0? searchModel.SupplierId:(object)DBNull.Value);
                 if (searchModel.SupplierId <=0)
                 {
-                    objParam[25] = new SqlParameter("@PaymentStatus", DBNull.Value);
+                    objParam[25] = new SqlParameter("@SupplierId", DBNull.Value);
 
                 }
                 else
                 {
-                    objParam[25] = new SqlParameter("@PaymentStatus", searchModel.PaymentStatus);
+                    objParam[25] = new SqlParameter("@SupplierId", searchModel.PaymentStatus);
 
                 }
 
