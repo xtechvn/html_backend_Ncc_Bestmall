@@ -932,7 +932,7 @@ var product_detail_new = {
             old_price: $('#old-price input').val() == undefined || $('#old-price input').val().trim() == '' ? 0 : parseFloat($('#old-price input').val().replaceAll(',', '')),
             quanity_of_stock: $('#main-stock input').val() == undefined || $('#main-stock input').val().trim() == '' ? 0 : parseInt($('#main-stock input').val().replaceAll(',', '')),
             label_id: $('#label-id select').find(':selected').val() == undefined || $('#label-id select').find(':selected').val().trim() == '' ? 0 : $('#label-id select').find(':selected').val(),
-            supplier_id: $('#supplier-id select').find(':selected').val() == undefined || $('#supplier-id select').find(':selected').val().trim() == '' ? 0 : $('#supplier-id select').find(':selected').val(),
+            //supplier_id: $('#supplier-id select').find(':selected').val() == undefined || $('#supplier-id select').find(':selected').val().trim() == '' ? 0 : $('#supplier-id select').find(':selected').val(),
             review_count: $('#review-count input').val() == undefined || $('#review-count input').val().trim() == '' ? 0 : parseInt($('#review-count input').val().replaceAll(',', '')),
             rating: $('#rating input').val() == undefined || $('#rating input').val().trim() == '' ? 0 : parseFloat($('#rating input').val().replaceAll(',', '')),
             total_sold: $('#total-sold input').val() == undefined || $('#total-sold input').val().trim() == '' ? 0 : parseInt($('#total-sold input').val().replaceAll(',', '')),
@@ -1262,14 +1262,14 @@ var product_detail_new = {
             return false
         }
         //--supplier
-        element = $('#supplier-id select')
-        if (element == null || element == undefined || element.find(':selected') == null || element.find(':selected') == undefined
-            || element.find(':selected').val() == '' || element.find(':selected').val() == undefined) {
-            _msgalert.error('Vui lòng chọn nhà cung cấp')
-            $('#supplier-id select').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-            success = false
-            return false
-        }
+        //element = $('#supplier-id select')
+        //if (element == null || element == undefined || element.find(':selected') == null || element.find(':selected') == undefined
+        //    || element.find(':selected').val() == '' || element.find(':selected').val() == undefined) {
+        //    _msgalert.error('Vui lòng chọn nhà cung cấp')
+        //    $('#supplier-id select').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+        //    success = false
+        //    return false
+        //}
 
         if (!success) return success
         //Mô tả chung 
