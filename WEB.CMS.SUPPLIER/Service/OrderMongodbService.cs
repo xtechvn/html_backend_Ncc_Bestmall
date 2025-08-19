@@ -1,5 +1,6 @@
 ﻿using MongoDB.Driver;
 using Entities.ViewModels.Orders;
+using HuloToys_Service.Models.Orders;
 
 namespace APP_CHECKOUT.MongoDb
 {

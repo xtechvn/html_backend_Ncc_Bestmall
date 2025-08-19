@@ -2,6 +2,7 @@
 using Caching.RedisWorker;
 using Entities.Models;
 using Entities.ViewModels.Orders;
+using HuloToys_Service.Models.Orders;
 using Newtonsoft.Json;
 using Utilities;
 using Utilities.Contants;
