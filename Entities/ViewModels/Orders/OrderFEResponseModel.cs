@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using HuloToys_Service.Models.Orders;
+using System.Collections.Generic;
 
 namespace Entities.ViewModels.Orders
 {

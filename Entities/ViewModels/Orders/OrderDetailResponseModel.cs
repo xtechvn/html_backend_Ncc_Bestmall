@@ -1,4 +1,5 @@
 ﻿using Entities.Models;
+using HuloToys_Service.Models.Orders;
 
 namespace Entities.ViewModels.Orders
 {
