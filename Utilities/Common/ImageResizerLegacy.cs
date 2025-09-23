@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Utilities.Common
 {
@@ -35,7 +37,7 @@ namespace Utilities.Common
 
                 using (MemoryStream ms = new MemoryStream(imageBytes))
                 {
-                    using (Image originalImage = Image.FromStream(ms))
+                    using (System.Drawing.Image originalImage = System.Drawing.Image.FromStream(ms))
                     {
                         // Tạo một Bitmap mới với kích thước mong muốn
                         using (Bitmap resizedImage = new Bitmap(width, height))
@@ -73,6 +75,92 @@ namespace Utilities.Common
             catch (Exception ex)
             {
                 throw new Exception($"An error occurred during image resizing: {ex.Message}", ex);
+            }
+        }
+        public static string AutoReduceImageQualityBase64(string base64Input, int maxKb=600)
+        {
+            try
+            {
+                byte[] imageBytes = Convert.FromBase64String(base64Input);
+
+                using (var msInput = new MemoryStream(imageBytes))
+                using (Bitmap bmp = new Bitmap(msInput))
+                {
+                    ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
+
+                    long quality = 100; 
+                    const long minQuality = 50; 
+
+                    while (quality >= minQuality)
+                    {
+                        using (var ms = new MemoryStream())
+                        {
+                            EncoderParameters encoderParams = new EncoderParameters(1);
+                            encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, quality);
+                            bmp.Save(ms, jpgEncoder, encoderParams);
+
+                            long sizeKb = ms.Length / 1024;
+                            if (sizeKb <= maxKb)
+                            {
+                                return $"data:image/jpeg;base64,{Convert.ToBase64String(ms.ToArray())}";
+                            }
+                        }
+                        quality -= 1; // giảm dần chất lượng
+                    }
+
+                    //// Nếu vẫn không đạt, lưu ở minQuality
+                    //using (var ms = new MemoryStream())
+                    //{
+                    //    EncoderParameters finalParams = new EncoderParameters(1);
+                    //    finalParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, minQuality);
+                    //    bmp.Save(ms, jpgEncoder, finalParams);
+                    //    return $"data:image/jpeg;base64,{Convert.ToBase64String(ms.ToArray())}";
+
+                    //}
+                }
+            }
+            catch
+            {
+
+            }
+            return base64Input;
+        }
+
+        private static ImageCodecInfo GetEncoder(ImageFormat format)
+        {
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
+            foreach (ImageCodecInfo codec in codecs)
+            {
+                if (codec.FormatID == format.Guid)
+                    return codec;
+            }
+            return null;
+        }
+        public static async Task<string> DownloadAndOptimizeImageAsync(string url,string _UrlStaticImage, int maxKb=500)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    string url_fixed = url.Contains("http") ? url : _UrlStaticImage + url;
+                    HttpResponseMessage response = await client.GetAsync(url_fixed);
+                    response.EnsureSuccessStatusCode();
+                    byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
+                    string contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg"; // fallback jpeg
+
+                    long sizeKb = imageBytes.Length / 1024;
+                    string base64 = Convert.ToBase64String(imageBytes);
+
+                    if (sizeKb > maxKb)
+                    {
+                        // Gọi hàm giảm chất lượng
+                        base64 = AutoReduceImageQualityBase64(base64, maxKb);
+                        return await UpLoadHelper.UploadBase64Src(base64, _UrlStaticImage);
+                    }
+                }
+                catch (Exception ex) { }
+                return url;
+               
             }
         }
     }

@@ -225,9 +225,9 @@ var product_detail_new = {
                         element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
                         product_detail_new.ValidateProcessing = false;
                         return
-                    } else if (value.trim().length > 14) {
-                        element.val(value.substring(0, 14));
-                        _msgalert.error('Tên biến thể không được quá 14 ký tự')
+                    } else if (value.trim().length > 50) {
+                        element.val(value.substring(0, 50));
+                        _msgalert.error('Tên biến thể không được quá 50 ký tự')
                         element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
                         product_detail_new.ValidateProcessing = false;
                         return
@@ -276,6 +276,8 @@ var product_detail_new = {
                 element.hide()
                 return
             }
+            $('#single-weight .switch-weight').closest('.item').show()
+
             _product_function.POST('/Product/AttributeDetail', { item_index: (++count) }, function (result) {
                 if (result != undefined) $('#product-attributes').append(result)
                 if ($('#product-attributes .attributes-list').length > 0) {
@@ -303,11 +305,15 @@ var product_detail_new = {
                 $('#product-attributes-table').show()
                 $('#product-attributes').show()
                 $('#single-product-amount').hide()
+                $('#single-weight .switch-weight').closest('.item').show()
             } else {
                 $('#product-attributes-table').hide()
                 $('#product-attributes').hide()
                 $('#single-product-amount').show()
+                $('#single-weight .switch-weight').closest('.item').hide()
+                $('#single-weight .switch-weight').prop('checked', false).trigger('click')
             }
+
         });
         $('body').on('click', '.attributes-list .delete-attribute-detail ', function () {
             var element = $(this)
@@ -322,6 +328,24 @@ var product_detail_new = {
         });
         //--Attribute table:
         $('body').on('click', '#product-attributes-apply .btn-all', function () {
+            var amount = isNaN(parseFloat($('#product-attributes-apply .td-amount input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .td-amount input').val().replaceAll(',', ''))
+            var profit_value = $('#product-attributes-apply .main-profit-value-type select').find(':selected').val()
+            if (profit_value.trim() == '1') {
+                var percent_value = isNaN(parseFloat($('#product-attributes-apply .main-profit-value').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .main-profit-value').find('input').val().replaceAll(',', ''))
+                var value_profit = amount / 100 * percent_value;
+                var rounded_value = Math.round(isNaN(value_profit) ? 0 : value_profit);
+                $('#product-attributes-apply .td-profit-vnd').find('input').val(_global_function.Comma(rounded_value)).trigger('change')
+            }
+            var profit_supplier_type = $('#product-attributes-apply .profit-supplier-type select').find(':selected').val()
+            if (profit_value.trim() == '1') {
+                var percent_value = isNaN(parseFloat($('#product-attributes-apply .profit-supplier').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .profit-supplier').find('input').val().replaceAll(',', ''))
+                var value_profit = amount / 100 * percent_value;
+                var rounded_value = Math.round(isNaN(value_profit) ? 0 : value_profit);
+                $('#product-attributes-apply .profit-supplier').attr('data-price', rounded_value)
+            } else {
+                var rounded_value = $('#product-attributes-apply .profit-supplier').val()
+                $('#product-attributes-apply .profit-supplier').attr('data-price', rounded_value)
+            }
             product_detail_new.ApplyAllPriceToTable()
             $('.btn-all').css('background-color', '')
             $('.btn-all').css('border-color', '')
@@ -396,6 +420,11 @@ var product_detail_new = {
             var element = $(this)
             product_detail_new.RenderRowData(element.closest('tr'))
         });
+        $('body').on('change', '#product-attributes-prices tbody select', function () {
+            var element = $(this)
+            element.closest('td').find('input').val('0').trigger('change')
+            product_detail_new.RenderRowData(element.closest('tr'))
+        });
         $('body').on('click', '#product-detail-cancel', function () {
             let title = 'Xác nhận hủy';
             let description = 'Dữ liệu đã chỉnh sửa sẽ không được lưu, bạn có chắc chắn không?';
@@ -448,9 +477,12 @@ var product_detail_new = {
             });
         });
         $('body').on('keyup', '#single-product-amount input', function () {
-            var amount = isNaN(parseFloat($('#main-amount').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#main-amount').find('input').val().replaceAll(',', ''))
-            var profit = isNaN(parseFloat($('#main-profit').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#main-profit').find('input').val().replaceAll(',', ''))
-            $('#main-price').find('input').val(_product_function.Comma(amount - profit))
+            product_detail_new.RenderSingleAmountData()
+        });
+        $('body').on('select2:select', '#single-product-amount select', function () {
+            var element = $(this)
+            element.closest('.wrap_input').find('input').val('0').trigger('change')
+            product_detail_new.RenderSingleAmountData()
         });
         $('body').on('keyup', '#old-price input', function (e) {
             var element = $(this)
@@ -507,6 +539,64 @@ var product_detail_new = {
             var element = $(this)
             element.closest('tr').remove()
         });
+
+
+        //$('body').on('select2:select', '#main-profit-value-type select', function () {
+        //    var element = $(this)
+        //    var value = element.find(':selected').val()
+        //    switch (value) {
+        //        case '0': {
+        //            $('#main-profit').show()
+        //            $('#main-profit-value').hide()
+        //        } break;
+        //        case '1': {
+        //            $('#main-profit').hide()
+        //            $('#main-profit-value').show()
+        //        } break;
+        //    }
+        //});
+        //$('body').on('select2:select', '#product-attributes-apply .main-profit-value-type select', function () {
+        //    var element = $(this)
+        //    var value = element.find(':selected').val()
+        //    switch (value) {
+        //        case '0': {
+        //            $('#product-attributes-apply .td-profit-vnd').show()
+        //            $('#product-attributes-apply .main-profit-value').hide()
+        //        } break;
+        //        case '1': {
+        //            $('#product-attributes-apply .td-profit-vnd').hide()
+        //            $('#product-attributes-apply .main-profit-value').show()
+        //        } break;
+        //    }
+        //});
+        //$('body').on('change', '#product-attributes-prices .main-profit-value-type select', function () {
+        //    var element = $(this)
+        //    var value = element.find(':selected').val()
+        //    var row = element.closest('td')
+        //    switch (value) {
+        //        case '0': {
+        //            row.find('.td-profit-vnd').show()
+        //            row.find('.main-profit-value').hide()
+        //        } break;
+        //        case '1': {
+        //            row.find('.td-profit-vnd').hide()
+        //            row.find('.main-profit-value').show()
+        //        } break;
+        //    }
+        //});
+        $('body').on('change', '#attachment input', function (e) {
+            var element = $(this)
+            var parent = element.closest('.wrap_input')
+            if ((parent.find('.list').find('.items').length - 1 + (element[0].files.length)) > _product_constants.VALUES.Attachment_Max_Image) {
+                _msgalert.error('Số lượng ảnh sản phẩm không được vượt quá ' + _product_function.Comma(_product_constants.VALUES.Attachment_Max_Image) + ' ảnh')
+            }
+            else {
+
+                element.attr('data-type', 'attachment_image')
+                product_detail_new.AddProductMedia(element)
+            }
+        });
+
     },
     ShowProductTab: function () {
         $('#specification-disabled').hide()
@@ -772,6 +862,28 @@ var product_detail_new = {
                 reader.readAsDataURL(element[0].files[0]);
                 element.val(null)
             } break
+            case 'attachment_image':
+                {
+                    var parent = element.closest('.wrap_input');
+                    if ($.inArray(element.val().split('.').pop().toLowerCase(), _product_constants.VALUES.ImageExtension) == -1) {
+                        _msgalert.error("Vui lòng chỉ upload các định dạng sau: " + _product_constants.VALUES.ImageExtension.join(', '));
+                        return
+                    }
+                    if ((parent.find('.list').find('.items').length - 1 + (element[0].files.length)) == _product_constants.VALUES.Attachment_Max_Image) {
+                        parent.find('.list').find('.items').hide()
+                    }
+                    $(element[0].files).each(function (index, item) {
+
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            parent.find('.list').prepend(_product_constants.HTML.ProductDetail_Images_Item.replaceAll('{src}', e.target.result).replaceAll('{id}', '-1'))
+                            parent.find('.items').find('.count').html(parent.find('.list').find('.magnific_popup').length)
+
+                        }
+                        reader.readAsDataURL(item);
+                    });
+                    element.val(null)
+                } break
         }
         element.closest('.choose-wrap').find('.count').html(_product_function.Comma(element.closest('.list').find('.items').length))
 
@@ -892,16 +1004,47 @@ var product_detail_new = {
 
     },
     RenderRowData: function (tr) {
-        if (tr.find('.td-price').length > 0 && tr.find('.td-profit').length > 0 && tr.find('.td-amount').length > 0) {
-            var amount = isNaN(parseFloat(tr.find('.td-amount').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat(tr.find('.td-amount').find('input').val().replaceAll(',', ''))
-            var profit = isNaN(parseFloat(tr.find('.td-profit').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat(tr.find('.td-profit').find('input').val().replaceAll(',', ''))
+        var amount = isNaN(parseFloat(tr.find('.td-amount').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat(tr.find('.td-amount').find('input').val().replaceAll(',', ''))
+        var profit_value = tr.find('.main-profit-value-type').find('select').find(':selected').val()
 
-            tr.find('.td-price').find('input').val(_product_function.Comma(amount - profit))
+        if (profit_value.trim() == '1') {
+            var percent_value = isNaN(parseFloat(tr.find('.main-profit-value').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat((tr.find('.main-profit-value').find('input').val().replaceAll(',', '')))
+            var value_profit = amount / 100 * percent_value;
+            var rounded_value = Math.round(isNaN(value_profit) ? 0 : value_profit);
+            tr.find('.td-profit-vnd').find('input').val(_global_function.Comma(rounded_value)).trigger('change')
         }
 
+       
+        var profit_supplier_type = tr.find('.profit-supplier-type').find('select').find(':selected').val()
+        var profit_supplier = isNaN(parseFloat(tr.find('.profit-supplier').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat(tr.find('.profit-supplier').find('input').val().replaceAll(',', ''))
+        var profit_supplier_value = product_detail_new.CalulateProfit(amount, profit_supplier, profit_supplier_type);
+
+        var profit_type = tr.find('.main-profit-value-type').find('select').find(':selected').val()
+        var profit = isNaN(parseFloat(tr.find('.main-profit-value').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat(tr.find('.main-profit-value').find('input').val().replaceAll(',', ''))
+        var profit_value = product_detail_new.CalulateProfit(amount, profit, profit_type);
+
+        var price = amount - profit_value - profit_supplier_value
+        tr.find('.td-price').find('input').val(_product_function.Comma(price <= 0 ? 0 : price))
+
     },
+
+    RenderSingleAmountData: function () {
+        var amount = isNaN(parseFloat($('#main-amount').find('input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#main-amount').find('input').val().replaceAll(',', ''))
+
+        var profit_type = $('#main-profit-value-type select').find(':selected').val()
+        var profit = isNaN(parseFloat($('#main-profit-value input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#main-profit-value input').val().replaceAll(',', ''))
+        var profit_value = product_detail_new.CalulateProfit(amount, profit, profit_type);
+
+        var profit_supplier_type = $('#profit_supplier-type select').find(':selected').val()
+        var profit_supplier = isNaN(parseFloat($('#profit_supplier input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#profit_supplier input').val().replaceAll(',', ''))
+        var profit_supplier_value = product_detail_new.CalulateProfit(amount, profit_supplier, profit_supplier_type);
+
+        var price = amount - profit_value - profit_supplier_value
+        $('#main-price').find('input').val(_product_function.Comma(price <= 0 ? 0 : price))
+    },
+
     ApplyAllPriceToTable: function () {
-        $('#product-attributes-prices .td-price input').val(_product_function.Comma($('#product-attributes-apply .td-price input').val()))
+        $('#product-attributes-prices .td-amount input').val(_product_function.Comma($('#product-attributes-apply .td-amount input').val()))
         $('#product-attributes-prices .td-profit input').val(_product_function.Comma($('#product-attributes-apply .td-profit input').val()))
         $('#product-attributes-prices .td-stock input').val(_product_function.Comma($('#product-attributes-apply .td-stock input').val()))
         $('#product-attributes-prices .td-sku input').val($('#product-attributes-apply .td-sku input').val())
@@ -909,9 +1052,37 @@ var product_detail_new = {
         $('#product-attributes-prices .td-dismenssion-height input').val($('#product-attributes-apply .td-dismenssion-height input').val())
         $('#product-attributes-prices .td-dismenssion-width input').val($('#product-attributes-apply .td-dismenssion-width input').val())
         $('#product-attributes-prices .td-dismenssion-depth input').val($('#product-attributes-apply .td-dismenssion-depth input').val())
-        var price = isNaN(parseFloat($('#product-attributes-apply .td-price input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .td-price input').val().replaceAll(',', ''))
-        var profit = isNaN(parseFloat($('#product-attributes-apply .td-profit input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .td-profit input').val().replaceAll(',', ''))
-        $('#product-attributes-prices .td-amount input').val(_product_function.Comma(price + profit))
+        $('#product-attributes-prices .td-profit-vnd input').val($('#product-attributes-apply .td-profit-vnd input').val()).trigger('change')
+        $('#product-attributes-prices .main-profit-value input').val($('#product-attributes-apply .main-profit-value input').val()).trigger('change')
+        $('#product-attributes-prices .main-profit-value-type select').val($('#product-attributes-apply .main-profit-value-type select').find(':selected').val())
+        var amount = isNaN(parseFloat($('#product-attributes-apply .td-amount input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .td-amount input').val().replaceAll(',', ''))
+       // var profit = isNaN(parseFloat($('#product-attributes-apply .td-profit-vnd input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .td-profit input').val().replaceAll(',', ''))
+        //var value = $('#product-attributes-apply .main-profit-value-type select').find(':selected').val()
+
+        //switch (value) {
+        //    case '0': {
+        //        $('#product-attributes-prices .td-profit-vnd').show()
+        //        $('#product-attributes-prices .main-profit-value').hide()
+        //    } break;
+        //    case '1': {
+        //        $('#product-attributes-prices .td-profit-vnd').hide()
+        //        $('#product-attributes-prices .main-profit-value').show()
+        //    } break;
+        //}
+        var profit_type = $('#product-attributes-apply .main-profit-value-type select').find(':selected').val()
+        var profit = isNaN(parseFloat($('#product-attributes-apply .main-profit-value input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .main-profit-value input').val().replaceAll(',', ''))
+        var profit_value = product_detail_new.CalulateProfit(amount, profit, profit_type);
+        $('#product-attributes-prices .main-profit-value input').val(_product_function.Comma(profit)).trigger('change')
+        $('#product-attributes-prices .main-profit-value-type select').val(profit_type).trigger('change')
+
+        var profit_supplier_type = $('#product-attributes-apply .profit-supplier-type select').find(':selected').val()
+
+        var profit_supplier = isNaN(parseFloat($('#product-attributes-apply .profit-supplier input').val().replaceAll(',', ''))) ? 0 : parseFloat($('#product-attributes-apply .profit-supplier input').val().replaceAll(',', ''))
+        var profit_supplier_value = product_detail_new.CalulateProfit(amount, profit_supplier, profit_supplier_type);
+        $('#product-attributes-prices .profit-supplier input').val(_product_function.Comma(profit_supplier)).trigger('change')
+        $('#product-attributes-prices .profit-supplier-type select').val(profit_supplier_type).trigger('change')
+        $('#product-attributes-prices .td-price input').val(_product_function.Comma(amount - profit_value - profit_supplier_value))
+
     },
     Summit: function () {
         var validate = product_detail_new.ValidateProduct()
@@ -926,17 +1097,19 @@ var product_detail_new = {
             status: 1,
             code: $('#product_detail').attr('data-id') == undefined || $('#product_detail').attr('data-id').trim() == '' ? null : $('#product_detail').attr('data-id'),
             price: $('#main-price input').val() == undefined || $('#main-price input').val().trim() == '' ? 0 : parseFloat($('#main-price input').val().replaceAll(',', '')),
-            profit: $('#main-profit input').val() == undefined || $('#main-profit input').val().trim() == '' ? 0 : parseFloat($('#main-profit input').val().replaceAll(',', '')),
+           // profit: $('#main-profit input').val() == undefined || $('#main-profit input').val().trim() == '' ? 0 : parseFloat($('#main-profit input').val().replaceAll(',', '')),
             amount: $('#main-amount input').val() == undefined || $('#main-amount input').val().trim() == '' ? 0 : parseFloat($('#main-amount input').val().replaceAll(',', '')),
             discount: $('#discount input').val() == undefined || $('#discount input').val().trim() == '' ? 0 : parseFloat($('#discount input').val().replaceAll(',', '')),
             old_price: $('#old-price input').val() == undefined || $('#old-price input').val().trim() == '' ? 0 : parseFloat($('#old-price input').val().replaceAll(',', '')),
             quanity_of_stock: $('#main-stock input').val() == undefined || $('#main-stock input').val().trim() == '' ? 0 : parseInt($('#main-stock input').val().replaceAll(',', '')),
             label_id: $('#label-id select').find(':selected').val() == undefined || $('#label-id select').find(':selected').val().trim() == '' ? 0 : $('#label-id select').find(':selected').val(),
-            //supplier_id: $('#supplier-id select').find(':selected').val() == undefined || $('#supplier-id select').find(':selected').val().trim() == '' ? 0 : $('#supplier-id select').find(':selected').val(),
+            supplier_id: $('#supplier-id select').find(':selected').val() == undefined || $('#supplier-id select').find(':selected').val().trim() == '' ? 0 : $('#supplier-id select').find(':selected').val(),
             review_count: $('#review-count input').val() == undefined || $('#review-count input').val().trim() == '' ? 0 : parseInt($('#review-count input').val().replaceAll(',', '')),
             rating: $('#rating input').val() == undefined || $('#rating input').val().trim() == '' ? 0 : parseFloat($('#rating input').val().replaceAll(',', '')),
             total_sold: $('#total-sold input').val() == undefined || $('#total-sold input').val().trim() == '' ? 0 : parseInt($('#total-sold input').val().replaceAll(',', '')),
 
+            profit_supplier: $('#profit_supplier input').val() == undefined || $('#profit_supplier input').val().trim() == '' ? 0 : parseFloat($('#profit_supplier input').val().replaceAll(',', '')),
+            profit_supplier_type: parseInt($('#profit_supplier-type select').find(':selected').val().replaceAll(',', ''))
         }
         model.images = []
         $('#images .list .items').each(function (index, item) {
@@ -1103,18 +1276,24 @@ var product_detail_new = {
                 var var_id = element.attr('data-id')
                 if (var_id == undefined) var_id = ''
                 var price = parseFloat(element.find('.td-price').find('input').val().replaceAll(',', ''))
-                var profit = parseFloat(element.find('.td-profit').find('input').val().replaceAll(',', ''))
+                //var profit = parseFloat(element.find('.td-profit-vnd').find('input').val().replaceAll(',', ''))
                 var amount = parseFloat(element.find('.td-amount').find('input').val().replaceAll(',', ''))
                 var quanity_of_stock = parseFloat(element.find('.td-stock').find('input').val().replaceAll(',', ''))
                 var weight = parseFloat(element.find('.td-weight').find('input').val().replaceAll(',', ''))
                 var package_width = parseFloat(element.find('.td-dismenssion-width').find('input').val().replaceAll(',', ''))
                 var package_height = parseFloat(element.find('.td-dismenssion-height').find('input').val().replaceAll(',', ''))
                 var package_depth = parseFloat(element.find('.td-dismenssion-depth').find('input').val().replaceAll(',', ''))
+                var profit_value = parseFloat(element.find('.main-profit-value').find('input').val().replaceAll(',', ''))
+                var profit_value_type = parseInt(element.find('.main-profit-value-type').find('select').find(':selected').val().replaceAll(',', ''))
+
+                var profit_supplier = parseFloat(element.find('.td-profit-supplier').find('input').val().replaceAll(',', ''))
+                var profit_supplier_type = parseInt(element.find('.profit-supplier-type').find('select').find(':selected').val().replaceAll(',', ''))
+
                 var variation = {
                     _id: var_id,
                     variation_attributes: [],
                     price: (price == undefined || isNaN(price) || price <= 0) ? null : price,
-                    profit: (profit == undefined || isNaN(profit) || profit <= 0) ? null : profit,
+                    //profit: (profit == undefined || isNaN(profit) || profit <= 0) ? null : profit,
                     amount: (amount == undefined || isNaN(amount) || amount <= 0) ? null : amount,
                     quanity_of_stock: (quanity_of_stock == undefined || isNaN(quanity_of_stock) || quanity_of_stock <= 0) ? null : quanity_of_stock,
                     sku: element.find('.td-sku').find('input').val(),
@@ -1122,7 +1301,10 @@ var product_detail_new = {
                     package_width: (package_width == undefined || isNaN(package_width) || package_width <= 0) ? model.package_width : package_width,
                     package_height: (package_height == undefined || isNaN(package_height) || package_height <= 0) ? model.package_height : package_height,
                     package_depth: (package_depth == undefined || isNaN(package_depth) || package_depth <= 0) ? model.package_depth : package_depth,
-
+                    profit_value: profit_value,
+                    profit_value_type: profit_value_type,
+                    profit_supplier: profit_supplier,
+                    profit_supplier_type: profit_supplier_type
                 }
                 if (model.is_one_weight == true) {
                     variation.weight = model.weight
@@ -1160,8 +1342,96 @@ var product_detail_new = {
             }
         })
 
-        model.profit_value = model.profit;
-        model.profit_value_type = 0;
+        model.profit_value = parseFloat($('#main-profit-value input').val().replaceAll(',', ''))
+        model.profit_value_type = parseInt($('#main-profit-value-type select').find(':selected').val().replaceAll(',', ''))
+
+        //-- Attachment:
+        model.attachment_root = []
+        $('#attachment-root .list .items').each(function (index, item) {
+            var element_image = $(this)
+            if (element_image.find('img').length > 0) {
+                //model.images.push(element_image.find('img').attr('src'))
+                var data_src = element_image.find('img').attr('src')
+                if (data_src == null || data_src == undefined || data_src.trim() == '') return true
+                if (_product_function.CheckIfImageVideoIsLocal(data_src)) {
+                    var result = _product_function.POSTSynchorus('/Product/SummitImages', { data_image: data_src })
+                    if (result != undefined && result.data != undefined && result.data.trim() != '') {
+                        model.attachment_root.push(result.data)
+                    } else {
+                        model.attachment_root.push(data_src)
+                    }
+                }
+                else {
+                    model.attachment_root.push(data_src)
+                }
+            }
+        })
+
+        model.attachment_product = []
+        $('#attachment-product .list .items').each(function (index, item) {
+            var element_image = $(this)
+            if (element_image.find('img').length > 0) {
+                //model.images.push(element_image.find('img').attr('src'))
+                var data_src = element_image.find('img').attr('src')
+                if (data_src == null || data_src == undefined || data_src.trim() == '') return true
+                if (_product_function.CheckIfImageVideoIsLocal(data_src)) {
+                    var result = _product_function.POSTSynchorus('/Product/SummitImages', { data_image: data_src })
+                    if (result != undefined && result.data != undefined && result.data.trim() != '') {
+                        model.attachment_product.push(result.data)
+                    } else {
+                        model.attachment_product.push(data_src)
+                    }
+                }
+                else {
+                    model.attachment_product.push(data_src)
+                }
+            }
+        })
+
+        model.attachment_supply = []
+        $('#attachment-supply .list .items').each(function (index, item) {
+            var element_image = $(this)
+            if (element_image.find('img').length > 0) {
+                //model.images.push(element_image.find('img').attr('src'))
+                var data_src = element_image.find('img').attr('src')
+                if (data_src == null || data_src == undefined || data_src.trim() == '') return true
+                if (_product_function.CheckIfImageVideoIsLocal(data_src)) {
+                    var result = _product_function.POSTSynchorus('/Product/SummitImages', { data_image: data_src })
+                    if (result != undefined && result.data != undefined && result.data.trim() != '') {
+                        model.attachment_supply.push(result.data)
+                    } else {
+                        model.attachment_supply.push(data_src)
+                    }
+                }
+                else {
+                    model.attachment_supply.push(data_src)
+                }
+            }
+        })
+        model.attachment_confirm = []
+        $('#attachment-confirm .list .items').each(function (index, item) {
+            var element_image = $(this)
+            if (element_image.find('img').length > 0) {
+                //model.images.push(element_image.find('img').attr('src'))
+                var data_src = element_image.find('img').attr('src')
+                if (data_src == null || data_src == undefined || data_src.trim() == '') return true
+                if (_product_function.CheckIfImageVideoIsLocal(data_src)) {
+                    var result = _product_function.POSTSynchorus('/Product/SummitImages', { data_image: data_src })
+                    if (result != undefined && result.data != undefined && result.data.trim() != '') {
+                        model.attachment_confirm.push(result.data)
+                    } else {
+                        model.attachment_confirm.push(data_src)
+                    }
+                }
+                else {
+                    model.attachment_confirm.push(data_src)
+                }
+            }
+        })
+
+        model.flashsale_badge_type = $('#badges select').find(':selected').val()
+
+        model.profit_affliate = parseFloat($('#profit-affiliate input').val().replaceAll(',', ''))
 
         _product_function.POST('/Product/Summit', { request: model }, function (result) {
             if (result.is_success) {
@@ -1262,14 +1532,14 @@ var product_detail_new = {
             return false
         }
         //--supplier
-        //element = $('#supplier-id select')
-        //if (element == null || element == undefined || element.find(':selected') == null || element.find(':selected') == undefined
-        //    || element.find(':selected').val() == '' || element.find(':selected').val() == undefined) {
-        //    _msgalert.error('Vui lòng chọn nhà cung cấp')
-        //    $('#supplier-id select').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-        //    success = false
-        //    return false
-        //}
+        element = $('#supplier-id select')
+        if (element == null || element == undefined || element.find(':selected') == null || element.find(':selected') == undefined
+            || element.find(':selected').val() == '' || element.find(':selected').val() == undefined) {
+            _msgalert.error('Vui lòng chọn nhà cung cấp')
+            $('#supplier-id select').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+            success = false
+            return false
+        }
 
         if (!success) return success
         //Mô tả chung 
@@ -1368,8 +1638,8 @@ var product_detail_new = {
                     element_detail.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
                     success = false
                     return false
-                } else if (value.trim().length > 14) {
-                    _msgalert.error('Tên biến thể không được quá 14 ký tự')
+                } else if (value.trim().length > 50) {
+                    _msgalert.error('Tên biến thể không được quá 50 ký tự')
                     element_detail.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
                     success = false
                     return false
@@ -1387,12 +1657,12 @@ var product_detail_new = {
                 $('#main-price').find('input').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
                 success = false
             }
-            var profit = parseFloat($('#main-profit').find('input').val().replaceAll(',', ''))
-            if (profit == undefined || isNaN(profit) || profit <= 0) {
-                _msgalert.error('Vui lòng nhập đầy đủ giá nhập cho sản phẩm')
-                $('#main-profit').find('input').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-                success = false
-            }
+            //var profit = parseFloat($('#main-profit').find('input').val().replaceAll(',', ''))
+            //if (profit == undefined || isNaN(profit) || profit <= 0) {
+            //    _msgalert.error('Vui lòng nhập đầy đủ giá nhập cho sản phẩm')
+            //    $('#main-profit').find('input').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+            //    success = false
+            //}
             var stock = parseFloat($('#main-stock').find('input').val().replaceAll(',', ''))
             if (stock == undefined || isNaN(stock) || stock <= 0) {
                 _msgalert.error('Vui lòng nhập đầy đủ số lượng sản phẩm trong kho hàng cho sản phẩm')
@@ -1405,18 +1675,18 @@ var product_detail_new = {
             $('#product-attributes-prices tbody tr').each(function (index, index) {
                 var element = $(this)
                 var price = parseFloat(element.find('.td-price').find('input').val().replaceAll(',', ''))
-                var profit = parseFloat(element.find('.td-profit').find('input').val().replaceAll(',', ''))
+                //var profit = parseFloat(element.find('.td-profit').find('input').val().replaceAll(',', ''))
                 var amount = parseFloat(element.find('.td-amount').find('input').val().replaceAll(',', ''))
                 if (price == undefined || isNaN(price) || price <= 0) {
                     _msgalert.error('Vui lòng nhập đầy đủ Giá cho tất cả các biến thể của sản phẩm')
                     success = false
                     return false
                 }
-                if (profit == undefined || isNaN(profit) || profit < 0) {
-                    _msgalert.error('Vui lòng nhập đầy đủ Lợi nhuận cho tất cả các biến thể của sản phẩm')
-                    success = false
-                    return false
-                }
+                //if (profit == undefined || isNaN(profit) || profit < 0) {
+                //    _msgalert.error('Vui lòng nhập đầy đủ Lợi nhuận cho tất cả các biến thể của sản phẩm')
+                //    success = false
+                //    return false
+                //}
                 if (amount == undefined || isNaN(amount) || amount < 0) {
                     _msgalert.error('Vui lòng nhập đầy đủ Giá bán cho tất cả các biến thể của sản phẩm')
                     success = false
@@ -1431,27 +1701,27 @@ var product_detail_new = {
                         return false
                     }
 
-                    var package_width = parseFloat(element.find('.td-dismenssion-width').find('input').val().replaceAll(',', ''))
-                    if (package_width == undefined || isNaN(package_width) || package_width <= 0) {
-                        _msgalert.error('Vui lòng nhập đầy đủ Kích thước đóng gói - Chiều dài gói hàng cho tất cả các biến thể của sản phẩm')
-                        element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-                        success = false
-                        return false
-                    }
-                    var package_height = parseFloat(element.find('.td-dismenssion-height').find('input').val().replaceAll(',', ''))
-                    if (package_height == undefined || isNaN(package_height) || package_height <= 0) {
-                        _msgalert.error('Vui lòng nhập đầy đủ Kích thước đóng gói - Chiều rộng gói hàng cho tất cả các biến thể của sản phẩm')
-                        element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-                        success = false
-                        return false
-                    }
-                    var package_depth = parseFloat(element.find('.td-dismenssion-depth').find('input').val().replaceAll(',', ''))
-                    if (package_depth == undefined || isNaN(package_depth) || package_depth <= 0) {
-                        _msgalert.error('Vui lòng nhập đầy đủ Kích thước đóng gói - Chiều cao gói hàng cho tất cả các biến thể của sản phẩm')
-                        element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-                        success = false
-                        return false
-                    }
+                    //var package_width = parseFloat(element.find('.td-dismenssion-width').find('input').val().replaceAll(',', ''))
+                    //if (package_width == undefined || isNaN(package_width) || package_width <= 0) {
+                    //    _msgalert.error('Vui lòng nhập đầy đủ Kích thước đóng gói - Chiều dài gói hàng cho tất cả các biến thể của sản phẩm')
+                    //    element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    //    success = false
+                    //    return false
+                    //}
+                    //var package_height = parseFloat(element.find('.td-dismenssion-height').find('input').val().replaceAll(',', ''))
+                    //if (package_height == undefined || isNaN(package_height) || package_height <= 0) {
+                    //    _msgalert.error('Vui lòng nhập đầy đủ Kích thước đóng gói - Chiều rộng gói hàng cho tất cả các biến thể của sản phẩm')
+                    //    element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    //    success = false
+                    //    return false
+                    //}
+                    //var package_depth = parseFloat(element.find('.td-dismenssion-depth').find('input').val().replaceAll(',', ''))
+                    //if (package_depth == undefined || isNaN(package_depth) || package_depth <= 0) {
+                    //    _msgalert.error('Vui lòng nhập đầy đủ Kích thước đóng gói - Chiều cao gói hàng cho tất cả các biến thể của sản phẩm')
+                    //    element.get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+                    //    success = false
+                    //    return false
+                    //}
                     var quanity_of_stock = parseFloat(element.find('.td-stock').find('input').val().replaceAll(',', ''))
                     if (quanity_of_stock == undefined || isNaN(quanity_of_stock) || quanity_of_stock <= 0) {
                         _msgalert.error('Vui lòng nhập đầy đủ Kho hàng cho tất cả các biến thể của sản phẩm')
@@ -1473,27 +1743,27 @@ var product_detail_new = {
                 return false
             }
 
-            var package_width = parseFloat($('#single-weight').find('.dismenssion-width').val().replaceAll(',', ''))
-            if (package_width == undefined || isNaN(package_width) || package_width <= 0) {
-                _msgalert.error('Vui lòng nhập đầy đủ kích thước chiều dài gói hàng trong phần vận chuyển')
-                $('#single-weight').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-                success = false
-                return false
-            }
-            var package_height = parseFloat($('#single-weight').find('.dismenssion-height').val().replaceAll(',', ''))
-            if (package_height == undefined || isNaN(package_height) || package_height <= 0) {
-                _msgalert.error('Vui lòng nhập đầy đủ kích thước chiều rộng gói hàng trong phần vận chuyển')
-                $('#single-weight').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-                success = false
-                return false
-            }
-            var package_depth = parseFloat($('#single-weight').find('.dismenssion-depth').val().replaceAll(',', ''))
-            if (package_depth == undefined || isNaN(package_depth) || package_depth <= 0) {
-                _msgalert.error('Vui lòng nhập đầy đủ kích thước chiều cao gói hàng trong phần vận chuyển')
-                $('#single-weight').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
-                success = false
-                return false
-            }
+            //var package_width = parseFloat($('#single-weight').find('.dismenssion-width').val().replaceAll(',', ''))
+            //if (package_width == undefined || isNaN(package_width) || package_width <= 0) {
+            //    _msgalert.error('Vui lòng nhập đầy đủ kích thước chiều dài gói hàng trong phần vận chuyển')
+            //    $('#single-weight').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+            //    success = false
+            //    return false
+            //}
+            //var package_height = parseFloat($('#single-weight').find('.dismenssion-height').val().replaceAll(',', ''))
+            //if (package_height == undefined || isNaN(package_height) || package_height <= 0) {
+            //    _msgalert.error('Vui lòng nhập đầy đủ kích thước chiều rộng gói hàng trong phần vận chuyển')
+            //    $('#single-weight').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+            //    success = false
+            //    return false
+            //}
+            //var package_depth = parseFloat($('#single-weight').find('.dismenssion-depth').val().replaceAll(',', ''))
+            //if (package_depth == undefined || isNaN(package_depth) || package_depth <= 0) {
+            //    _msgalert.error('Vui lòng nhập đầy đủ kích thước chiều cao gói hàng trong phần vận chuyển')
+            //    $('#single-weight').get(0).scrollIntoView({ block: 'center', behavior: 'smooth' });
+            //    success = false
+            //    return false
+            //}
         }
         if (!success) return success
         //-- discount
@@ -1719,7 +1989,7 @@ var product_detail_new = {
         }
         var discount_value = ((old_price - min_price) / old_price) * 100
         var discount = Math.round(discount_value <= 0 ? 0 : discount_value)
-        if (discount == undefined|| isNaN(discount)) discount = 0
+        if (discount == undefined || isNaN(discount)) discount = 0
         $('#discount input').val(discount).trigger('change')
     },
     AddNewProductBuyWith: function () {
@@ -1857,5 +2127,21 @@ var product_detail_new = {
                 _msgalert.error('Sync ES Failed')
             }
         });
+    },
+    CalulateProfit: function (amount, profit_value, unit_type) {
+        var profit = 0;
+        switch (unit_type.trim()) {
+            case '1': {
+                var percent_value = profit_value
+                var value_profit = amount / 100 * percent_value;
+                profit = Math.round(isNaN(value_profit) ? 0 : value_profit);
+
+            } break;
+            case '0': {
+                profit = profit_value;
+
+            } break;
+        }
+        return profit
     }
 }
