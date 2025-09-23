@@ -96,7 +96,13 @@ namespace WEB.CMS.Controllers
 
             var normalizedKeyword = keyword.Normalize(NormalizationForm.FormC);
             Console.WriteLine($"Normalized keyword: '{normalizedKeyword}'");
-            var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, status, page_index, page_size);
+            //-- CMS supplier:
+            int SupplierId = 0;
+            if (HttpContext.User.FindFirst("SupplierId") != null)
+            {
+                SupplierId = Convert.ToInt32(HttpContext.User.FindFirst("SupplierId").Value);
+            }
+            var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, status, page_index, page_size,false,SupplierId);
             List<ProductMongoDbModel> sub_products = new List<ProductMongoDbModel>();
             if (main_products != null && main_products.Count > 0)
             {
@@ -106,7 +112,8 @@ namespace WEB.CMS.Controllers
             ViewBag.Sub = sub_products;
             string static_domain = _configuration["DomainConfig:ImageStatic"];
             ViewBag.StaticDomain = static_domain != null && static_domain.EndsWith("/") ? static_domain : static_domain + "/";
-            var count = await _productV2DetailMongoAccess.CountListing(keyword, group_id, status);
+           
+            var count = await _productV2DetailMongoAccess.CountListing(keyword, group_id, status,SupplierId);
             if (count > 0) {
                 ViewBag.TotalPage= (int)Math.Ceiling((double)count / page_size);
             }
@@ -116,7 +123,7 @@ namespace WEB.CMS.Controllers
             }
            ViewBag.CurrentPage = page_index;
            ViewBag.PageSize = page_size;
-            ViewBag.CountProduct = await _productV2DetailMongoAccess.CountListing(keyword, group_id, status);
+            ViewBag.CountProduct = await _productV2DetailMongoAccess.CountListing(keyword, group_id, status, SupplierId);
             return View();
         }
 
@@ -162,8 +169,15 @@ namespace WEB.CMS.Controllers
 
                 var normalizedKeyword = keyword.Normalize(NormalizationForm.FormC);
                 Console.WriteLine($"Normalized keyword: '{normalizedKeyword}'");
+                //-- CMS supplier:
+                int SupplierId = 0;
+                if (HttpContext.User.FindFirst("SupplierId") != null)
+                {
+                    SupplierId = Convert.ToInt32(HttpContext.User.FindFirst("SupplierId").Value);
+                    ViewBag.Supplier = _supplierRepository.GetById(SupplierId);
 
-                var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, page_index, page_size);
+                }
+                var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, page_index, page_size, SupplierId);
                 return Ok(new
                 {
                     is_success = true,
@@ -826,6 +840,14 @@ namespace WEB.CMS.Controllers
             {
                 ViewBag.Supplier = _supplierRepository.GetById((int)product.supplier_id);
             }
+            //-- CMS supplier:
+            int SupplierId = 0;
+            if (HttpContext.User.FindFirst("SupplierId") != null)
+            {
+                SupplierId = Convert.ToInt32(HttpContext.User.FindFirst("SupplierId").Value);
+                ViewBag.Supplier = _supplierRepository.GetById(SupplierId);
+
+            }
             if (product != null && product.label_id != null && product.label_id > 0)
             {
                 ViewBag.Label = await _labelRepository.GetById((int)product.label_id);
@@ -1146,7 +1168,15 @@ namespace WEB.CMS.Controllers
 
             string static_domain = _configuration["DomainConfig:ImageStatic"];
             ViewBag.StaticDomain = static_domain != null && static_domain.EndsWith("/") ? static_domain : static_domain + "/";
-            var main_products = await _productV2DetailMongoAccess.ListingProductBuyWith(keyword, group_id, current_id, main_product_requirement);
+            //-- CMS supplier:
+            int SupplierId = 0;
+            if (HttpContext.User.FindFirst("SupplierId") != null)
+            {
+                SupplierId = Convert.ToInt32(HttpContext.User.FindFirst("SupplierId").Value);
+                ViewBag.Supplier = _supplierRepository.GetById(SupplierId);
+
+            }
+            var main_products = await _productV2DetailMongoAccess.ListingProductBuyWith(keyword, group_id, current_id, main_product_requirement, SupplierId);
             ViewBag.Main = main_products;
             return View();
         }
@@ -1286,8 +1316,15 @@ namespace WEB.CMS.Controllers
             {
                 var bytes = System.Text.Encoding.UTF8.GetBytes(keyword);
                 var normalizedKeyword = keyword.Normalize(NormalizationForm.FormC);
+                //-- CMS supplier:
+                int SupplierId = 0;
+                if (HttpContext.User.FindFirst("SupplierId") != null)
+                {
+                    SupplierId = Convert.ToInt32(HttpContext.User.FindFirst("SupplierId").Value);
+                    ViewBag.Supplier = _supplierRepository.GetById(SupplierId);
 
-                var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, status, -1, -1, true);
+                }
+                var main_products = await _productV2DetailMongoAccess.Listing(keyword, group_id, status, -1, -1, true,SupplierId);
                 List<ProductMongoDbModel> sub_products = new List<ProductMongoDbModel>();
                 if (main_products != null && main_products.Count > 0)
                 {

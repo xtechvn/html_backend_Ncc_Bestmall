@@ -112,7 +112,8 @@ namespace WEB.CMS.Models.Product
             }
         }
 
-        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1,int status=-1, int page_index = 1, int page_size = 10,bool export_all=false)
+        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1,int status=-1, int page_index = 1, int page_size = 10,bool export_all=false
+            ,int SupplierId=-1)
         {
             try
             {
@@ -134,6 +135,11 @@ namespace WEB.CMS.Models.Product
                 if (group_id > 0)
                 {
                     filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, new BsonRegularExpression($@"\b{group_id}\b"));
+
+                }
+                if (SupplierId > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, SupplierId);
 
                 }
                 if (status > 0)
@@ -203,7 +209,7 @@ namespace WEB.CMS.Models.Product
                 return null;
             }
         }
-        public async Task<long> CountListing(string keyword = "", int group_id = -1, int status = -1)
+        public async Task<long> CountListing(string keyword = "", int group_id = -1, int status = -1, int SupplierId = -1)
         {
             try
             {
@@ -225,6 +231,11 @@ namespace WEB.CMS.Models.Product
                 if (group_id > 0)
                 {
                     filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, new BsonRegularExpression($@"\b{group_id}\b"));
+
+                }
+                if (SupplierId > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, SupplierId);
 
                 }
                 if (status > 0)
@@ -537,7 +548,8 @@ namespace WEB.CMS.Models.Product
                 return null;
             }
         }
-        public async Task<List<ProductMongoDbModel>> ListingProductBuyWith(string keyword = "", int group_id = -1, List<string>? current_id = null, bool main_product_requirement = false)
+        public async Task<List<ProductMongoDbModel>> ListingProductBuyWith(string keyword = "", int group_id = -1, List<string>? current_id = null
+            , bool main_product_requirement = false,int SupplierId=-1)
         {
             try
             {
@@ -575,7 +587,7 @@ namespace WEB.CMS.Models.Product
                         condition1_ParentIdNullOrEmpty,
                         condition1_NoVariationDetail
                     );
-
+                    
                     // Điều kiện cho Trường hợp 2: Có parent_product_id VÀ cũng có variation_detail
                     var condition2_HasParentId = Builders<ProductMongoDbModel>.Filter.And(
                         Builders<ProductMongoDbModel>.Filter.Ne(p => p.parent_product_id, null),
@@ -593,7 +605,7 @@ namespace WEB.CMS.Models.Product
                         condition2_HasParentId,
                         condition2_HasVariationDetail
                     );
-
+                   
                     // Kết hợp hai trường hợp bằng toán tử OR
                     filter &= Builders<ProductMongoDbModel>.Filter.Or(
                         case1Filter,
@@ -616,6 +628,11 @@ namespace WEB.CMS.Models.Product
                 {
                     filter &= Builders<ProductMongoDbModel>.Filter.Nin(p => p._id, current_id);
                     filter &= Builders<ProductMongoDbModel>.Filter.Nin(p => p.parent_product_id, current_id);
+
+                }
+                if (SupplierId > 0)
+                {
+                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, SupplierId);
 
                 }
                 var sort_filter = Builders<ProductMongoDbModel>.Sort;
