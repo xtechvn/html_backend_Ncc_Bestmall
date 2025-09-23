@@ -239,7 +239,7 @@
                 <label class="label">Chọn nhà cung cấp <sup class="red">*</sup></label>
                 <div class="wrap_input">
                     <div class="form-group namesp">
-                        <select class="select2 w-100">
+                        <select class="select2 w-100" disabled>
                             @if (supplier != null && supplier.SupplierId > 0)
                             {
                                 <option value="@supplier.SupplierId" selected> @((supplier.Status != (int)SUPPLIER_STATUS.CONFIRMED ? "[NCC này chưa được duyệt/ Đã ngưng hoạt động, vui lòng chọn NCC khác]" : @supplier.FullName)) </option>

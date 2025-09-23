@@ -18,7 +18,7 @@ var product_detail_new = {
         product_detail_new.ReRenderAttributesDetail()
 
         product_detail_new.RenderProductBuyWith()
-        product_detail_new.Select2Supplier($('#supplier-id select'))
+       // product_detail_new.Select2Supplier($('#supplier-id select'))
         product_detail_new.Select2Label($('#label-id select'))
         product_detail_new.Select2Spec($('#description-specification select'))
         $('#specifications-list .spec-value').attr('readonly', 'readonly')
@@ -1867,33 +1867,33 @@ var product_detail_new = {
         $('#group-id input').attr('data-old-id', old_group_product_selected_id)
 
     },
-    Select2Supplier: function (element) {
-        element.select2({
-            ajax: {
-                url: "/Supplier/SearchSupplier",
-                type: "post",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    var query = {
-                        txt_search: params.term,
-                    }
-                    return query;
-                },
-                processResults: function (response) {
-                    return {
-                        results: $.map(response.data, function (item) {
-                            return {
-                                text: ((item.supplierCode == null || item.supplierCode == undefined || item.supplierCode.trim() == '') ? '' : (item.supplierCode + ' - ')) + ' ' + item.fullName,
-                                id: item.supplierId,
-                            }
-                        })
-                    };
-                },
-                cache: true
-            }
-        });
-    },
+    //Select2Supplier: function (element) {
+    //    element.select2({
+    //        ajax: {
+    //            url: "/Supplier/SearchSupplier",
+    //            type: "post",
+    //            dataType: 'json',
+    //            delay: 250,
+    //            data: function (params) {
+    //                var query = {
+    //                    txt_search: params.term,
+    //                }
+    //                return query;
+    //            },
+    //            processResults: function (response) {
+    //                return {
+    //                    results: $.map(response.data, function (item) {
+    //                        return {
+    //                            text: ((item.supplierCode == null || item.supplierCode == undefined || item.supplierCode.trim() == '') ? '' : (item.supplierCode + ' - ')) + ' ' + item.fullName,
+    //                            id: item.supplierId,
+    //                        }
+    //                    })
+    //                };
+    //            },
+    //            cache: true
+    //        }
+    //    });
+    //},
     Select2Label: function (element) {
         element.select2({
             ajax: {
