@@ -18,6 +18,10 @@ namespace Entities.ViewModels.Products
         public float? package_width { get; set; }
         public float? package_height { get; set; }
         public float? package_depth { get; set; }
+        public float? profit_value { get; set; }
+        public int? profit_value_type { get; set; }
+        public float? profit_supplier { get; set; }
+        public int? profit_supplier_type { get; set; }
     }
     public class ProductDetailVariationAttributesMongoDbModel
     {

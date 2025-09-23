@@ -1,4 +1,5 @@
 ﻿@using Entities.ViewModels.Products
+@using System.Globalization
 @{
     Layout = null;
     bool? is_one_weight = (bool?)ViewBag.IsOneWeight;
@@ -6,7 +7,9 @@
     List<ProductAttributeMongoDbModelItem> attributes_detail = (List<ProductAttributeMongoDbModelItem>)ViewBag.AttributesDetail;
     List<ProductMongoDbModel> sub_product = (List<ProductMongoDbModel>)ViewBag.SubProduct;
 
-
+    NumberFormatInfo nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
+    nfi.NumberGroupSeparator = ","; // Dấu phẩy cho hàng nghìn
+    nfi.NumberDecimalSeparator = "."; // Dấu chấm cho thập phân
 }
 <table class="table w-100">
     <thead>
@@ -24,15 +27,16 @@
 
             }
             <th class="th-price" style="min-width: 150px;">Giá<sup class="red">*</sup></th>
-            <th class="th-profit" style="min-width: 150px;">Lợi nhuận<sup class="red">*</sup></th>
-            <th class="th-amount" style="min-width: 150px;">Giá bán<sup class="red">*</sup></th>
+            <th class="th-profit" style="min-width: 150px;">Triết khấu lợi nhuận<sup class="red">*</sup></th>
+            <th class="th-profit" style="min-width: 150px;">Triết khấu từ nhà cung cấp<sup class="red">*</sup></th>
+            <th class="th-amount" style="min-width: 150px;">Giá niêm yết<sup class="red">*</sup></th>
             <th class="th-stock" style="min-width: 100px;">Kho hàng<sup class="red">*</sup></th>
             <th class="th-weight" style="@((is_one_weight==false ||is_one_weight==null)?"":"display:none;") min-width: 100px; ">
                 Cân nặng<sup class="red">*</sup><br>
                 (Sau khi đóng gói)
             </th>
             <th class="th-dismension" style="@((is_one_weight==false ||is_one_weight==null)?"":"display:none;") min-width: 300px;">
-                Kích thước đóng gói<sup class="red">*</sup><br>(Phí vận chuyển thực tế sẽ thay đổi nếu bạn nhập sai kích thước)
+                Kích thước đóng gói@* <sup class="red">*</sup><br>(Phí vận chuyển thực tế sẽ thay đổi nếu bạn nhập sai kích thước) *@
             </th>
             <th class="th-sku">SKU phân loại</th>
         </tr>
@@ -60,45 +64,107 @@
                                 <td>@a2.name</td>
                                 <td class="td-price">
                                     <div class="form-group mb-0 price">
-                                        <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price > 0 ? sub_selected.price.ToString("N0") : "")" readonly>
+                                        <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price > 0 ? sub_selected.price.ToString("N0",nfi) : "")" readonly>
                                         <span class="note">đ</span>
                                     </div>
                                 </td>
                                 <td class="td-profit">
-                                    <div class="form-group mb-0 price">
-                                        <input type="text" class="form-control input-price" placeholder="Lợi nhuận" value="@(sub_selected != null && sub_selected.profit>=0 ? sub_selected.profit.ToString("N0"):"")">
-                                        <span class="note">đ</span>
+                                    <div style="display:flex;">
+                                       @*  <div class="form-group mb-0 td-profit-vnd main-profit price" style="margin-bottom: 0!important; @((sub_selected != null && (sub_selected.profit_value_type == null || sub_selected.profit_value_type == 0)) ? "" : "display:none;")">
+                                            <input type="text" class="form-control input-price" placeholder="% triết khấu lợi nhuận" value="@(sub_selected != null && sub_selected.profit >= 0 ? sub_selected.profit.ToString("N0", nfi) : "")">
+                                        </div> *@
+                                        <div class="form-group main-profit-value price " style="margin-bottom: 0!important;">
+                                            <input type="text" class="form-control input-price" placeholder="Số tiền triết khấu lợi nhuận" value="@(sub_selected == null || sub_selected.profit_value == null ? "0" : ((float)sub_selected.profit_value).ToString("N0"))">
+                                        </div>
+                                        <div class="form-group main-profit-value-type price" style="width:90px !important;margin-bottom: 0!important;">
+                                            <select class="select2 w-100 form-control" style="width:100%">
+                                                @{
+                                                    if (sub_selected == null || sub_selected.profit_value_type == 0)
+                                                    {
+                                                        <option value="0" selected>VNĐ</option>
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="0">VNĐ</option>
+                                                    }
+                                                    if (sub_selected != null && sub_selected.profit_value_type == 1)
+                                                    {
+                                                        <option value="1" selected>%</option>
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="1">%</option>
+                                                    }
+                                                }
+
+                                            </select>
+                                        </div>
                                     </div>
+                                </td>
+                                <td class="td-profit-supplier">
+                                   <div style="display:flex;">
+                                        <div class="form-group profit-supplier value mb-0 price" style="margin-bottom: 0!important;">
+                                            <input type="text" class="form-control input-price" placeholder="Triết khấu NCC" value="@(sub_selected != null && sub_selected.profit_supplier >= 0 ? ((float)sub_selected.profit_supplier).ToString("N0", nfi) : "")">
+                                        </div>
+
+                                        <div class="form-group profit-supplier-type price" style="width:90px !important;margin-bottom: 0!important;">
+                                            <select class="select2 w-100 form-control" style="width:100%">
+                                                @{
+                                                    if (sub_selected == null || sub_selected.profit_supplier_type == null || sub_selected.profit_value_type == 0)
+                                                    {
+                                                        <option value="0" selected>VNĐ</option>
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="0">VNĐ</option>
+                                                    }
+                                                    if (sub_selected != null && sub_selected.profit_supplier_type != null && sub_selected.profit_value_type == 1)
+                                                    {
+                                                        <option value="1" selected>%</option>
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="1">%</option>
+                                                    }
+                                                }
+
+                                            </select>
+                                        </div>
+                                   </div>
                                 </td>
                                 <td class="td-amount">
                                     <div class="form-group mb-0 price">
-                                        <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0"):"")" >
+                                        <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0",nfi):"")" >
                                         <span class="note">đ</span>
                                     </div>
                                 </td>
                                 <td class="td-stock">
                                     <div class="form-group mb-0">
-                                        <input type="text" class="form-control input-price" placeholder="Kho hàng" value="@(sub_selected != null && sub_selected.quanity_of_stock>0 ? sub_selected.quanity_of_stock.ToString("N0"):"")">
+                                        <input type="text" class="form-control input-price" placeholder="Kho hàng" value="@(sub_selected != null && sub_selected.quanity_of_stock>0 ? sub_selected.quanity_of_stock.ToString("N0",nfi):"")">
                                     </div>
                                 </td>
                                 <td class="td-weight" style="@((is_one_weight==false ||is_one_weight==null)? "":"display:none;")">
                                     <div class="form-group mb-0 price">
-                                        <input type="text" class="form-control input-price" placeholder="nhập cân nặng" value="@(sub_selected != null && sub_selected.weight>0 ? ((float)sub_selected.weight).ToString("N0"):"")">
+                                        <input type="text" class="form-control input-price" placeholder="nhập cân nặng" value="@(sub_selected != null && sub_selected.weight>0 ? ((float)sub_selected.weight).ToString("N0",nfi):"")">
                                         <span class="note">gr</span>
                                     </div>
                                 </td>
                                 <td class="td-dismenssion" style="@((is_one_weight==false ||is_one_weight==null)?"":"display:none;")">
                                     <div class="flex gap10 flex-nowrap align-items-center">
                                         <div  class="td-dismenssion-height form-group mb-0 price">
-                                            <input type="text" class="form-control input-price" placeholder="nhập chiều rộng" value="@(sub_selected != null && sub_selected.package_height!=null ? ((float)sub_selected.package_height).ToString("N0"):"")">
+                                            <input type="text" class="form-control input-price" placeholder="nhập chiều rộng" value="@(sub_selected != null && sub_selected.package_height!=null ? ((float)sub_selected.package_height).ToString("N0",nfi):"")">
                                             <span class="note">R</span>
                                         </div>
                                         <div class=" td-dismenssion-width form-group mb-0 price">
-                                            <input type="text" class="form-control input-price" placeholder="nhập chiều dài" value="@(sub_selected != null && sub_selected.package_width!=null ? ((float)sub_selected.package_width).ToString("N0"):"")">
+                                            <input type="text" class="form-control input-price" placeholder="nhập chiều dài" value="@(sub_selected != null && sub_selected.package_width!=null ? ((float)sub_selected.package_width).ToString("N0",nfi):"")">
                                             <span class="note">D</span>
                                         </div>
                                         <div class="td-dismenssion-depth form-group mb-0 price">
-                                            <input type="text" class="form-control input-price" placeholder="nhập chiều cao" value="@(sub_selected != null && sub_selected.package_depth!=null ? ((float)sub_selected.package_depth).ToString("N0"):"")">
+                                            <input type="text" class="form-control input-price" placeholder="nhập chiều cao" value="@(sub_selected != null && sub_selected.package_depth!=null ? ((float)sub_selected.package_depth).ToString("N0",nfi):"")">
                                             <span class="note">C</span>
                                         </div>
                                         <span class="note">cm</span>
@@ -120,45 +186,107 @@
                             <td>@a1.name</td>
                             <td class="td-price">
                                 <div class="form-group mb-0 price">
-                                    <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price > 0 ? sub_selected.price.ToString("N0") : "")" readonly>
+                                    <input type="text" class="form-control input-price" placeholder="Giá nhập" value="@(sub_selected != null && sub_selected.price > 0 ? sub_selected.price.ToString("N0",nfi) : "")" readonly>
                                     <span class="note">đ</span>
                                 </div>
                             </td>
                             <td class="td-profit">
-                                <div class="form-group mb-0 price">
-                                    <input type="text" class="form-control input-price" placeholder="Lợi nhuận" value="@(sub_selected != null && sub_selected.profit>=0 ? sub_selected.profit.ToString("N0"):"")">
-                                    <span class="note">đ</span>
+                              <div style="display:flex;">
+                                    @* <div class="form-group mb-0 td-profit-vnd main-profit price" style="margin-bottom: 0!important; @(sub_selected == null || (sub_selected != null && (sub_selected.profit_value_type == null || sub_selected.profit_value_type == 0)) ? "" : "display:none;")">
+                                        <input type="text" class="form-control input-price" placeholder="Lợi nhuận" value="@(sub_selected != null && sub_selected.profit >= 0 ? sub_selected.profit.ToString("N0", nfi) : "")">
+                                    </div> *@
+                                    <div class="form-group main-profit-value price " style="margin-bottom: 0!important;">
+                                        <input type="text" class="form-control input-price" placeholder="Nhập giá" value="@(sub_selected == null || sub_selected.profit_value == null ? "0" : ((float)sub_selected.profit_value).ToString("N0", nfi))">
+                                    </div>
+                                    <div class="form-group main-profit-value-type price" style="width:90px !important;margin-bottom: 0!important;">
+                                        <select class="select2 w-100 form-control" style="width:100%">
+                                            @{
+                                                if (sub_selected == null || sub_selected.profit_value_type == 0)
+                                                {
+                                                    <option value="0" selected>VNĐ</option>
+
+                                                }
+                                                else
+                                                {
+                                                    <option value="0">VNĐ</option>
+                                                }
+                                                if (sub_selected != null && sub_selected.profit_value_type == 1)
+                                                {
+                                                    <option value="1" selected>%</option>
+
+                                                }
+                                                else
+                                                {
+                                                    <option value="1">%</option>
+                                                }
+                                            }
+
+                                        </select>
+                                    </div>
+                              </div>
+                            </td>
+                            <td class="td-profit-supplier">
+                                <div style="display:flex;">
+                                    <div class="form-group profit-supplier value mb-0 price" style="margin-bottom: 0!important;">
+                                        <input type="text" class="form-control input-price" placeholder="Triết khấu NCC" value="@(sub_selected != null && sub_selected.profit_supplier >= 0 ? ((float)sub_selected.profit_supplier).ToString("N0", nfi) : "")">
+                                    </div>
+
+                                    <div class="form-group profit-supplier-type price" style="width:90px !important;margin-bottom: 0!important;">
+                                        <select class="select2 w-100 form-control" style="width:100%">
+                                            @{
+                                                if (sub_selected == null || sub_selected.profit_supplier_type == null || sub_selected.profit_value_type == 0)
+                                                {
+                                                    <option value="0" selected>VNĐ</option>
+
+                                                }
+                                                else
+                                                {
+                                                    <option value="0">VNĐ</option>
+                                                }
+                                                if (sub_selected != null && sub_selected.profit_supplier_type != null && sub_selected.profit_value_type == 1)
+                                                {
+                                                    <option value="1" selected>%</option>
+
+                                                }
+                                                else
+                                                {
+                                                    <option value="1">%</option>
+                                                }
+                                            }
+
+                                        </select>
+                                    </div>
                                 </div>
                             </td>
                             <td class="td-amount">
                                 <div class="form-group mb-0 price">
-                                    <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0"):"")" >
+                                    <input type="text" class="form-control input-price" placeholder="Giá bán" value="@(sub_selected != null && sub_selected.amount>0 ? sub_selected.amount.ToString("N0",nfi):"")" >
                                     <span class="note">đ</span>
                                 </div>
                             </td>
                             <td class="td-stock">
                                 <div class="form-group mb-0">
-                                    <input type="text" class="form-control input-price" placeholder="Kho hàng" value="@(sub_selected != null && sub_selected.quanity_of_stock>0 ? sub_selected.quanity_of_stock.ToString("N0"):"")">
+                                    <input type="text" class="form-control input-price" placeholder="Kho hàng" value="@(sub_selected != null && sub_selected.quanity_of_stock>0 ? sub_selected.quanity_of_stock.ToString("N0",nfi):"")">
                                 </div>
                             </td>
                             <td class="td-weight" style="@((is_one_weight==false ||is_one_weight==null)?"":"display:none;")">
                                 <div class="form-group mb-0 price">
-                                    <input type="text" class="form-control input-price" placeholder="nhập cân nặng" value="@(sub_selected != null && sub_selected.weight>0 ? ((float)sub_selected.weight).ToString("N0"):"")">
+                                    <input type="text" class="form-control input-price" placeholder="nhập cân nặng" value="@(sub_selected != null && sub_selected.weight>0 ? ((float)sub_selected.weight).ToString("N0",nfi):"")">
                                     <span class="note">gr</span>
                                 </div>
                             </td>
                             <td class="td-dismenssion" style="@((is_one_weight==false ||is_one_weight==null)?"":"display:none;")">
                                 <div class="flex gap10 flex-nowrap align-items-center">
                                     <div class="form-group mb-0 input-price td-dismenssion-height">
-                                        <input type="text" class=" form-control input-price" placeholder="nhập chiều rộng" value="@(sub_selected != null && sub_selected.package_height!=null ? ((float)sub_selected.package_height).ToString("N0"):"")">
+                                        <input type="text" class=" form-control input-price" placeholder="nhập chiều rộng" value="@(sub_selected != null && sub_selected.package_height!=null ? ((float)sub_selected.package_height).ToString("N0",nfi):"")">
                                         <span class="note">R</span>
                                     </div>
                                     <div class="form-group mb-0 input-price td-dismenssion-width">
-                                        <input type="text" class=" form-control input-price" placeholder="nhập chiều dài" value="@(sub_selected != null && sub_selected.package_width!=null ? ((float)sub_selected.package_width).ToString("N0"):"")">
+                                        <input type="text" class=" form-control input-price" placeholder="nhập chiều dài" value="@(sub_selected != null && sub_selected.package_width!=null ? ((float)sub_selected.package_width).ToString("N0",nfi):"")">
                                         <span class="note">D</span>
                                     </div>
                                     <div class="form-group mb-0 input-price td-dismenssion-depth">
-                                        <input type="text" class=" form-control input-price" placeholder="nhập chiều cao" value="@(sub_selected != null && sub_selected.package_depth!=null ? ((float)sub_selected.package_depth).ToString("N0"):"")">
+                                        <input type="text" class=" form-control input-price" placeholder="nhập chiều cao" value="@(sub_selected != null && sub_selected.package_depth!=null ? ((float)sub_selected.package_depth).ToString("N0",nfi):"")">
                                         <span class="note">C</span>
                                     </div>
                                     <span class="note">cm</span>
@@ -178,3 +306,4 @@
 
     </tbody>
 </table>
+

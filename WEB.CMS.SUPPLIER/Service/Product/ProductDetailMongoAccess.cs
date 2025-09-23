@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using Elasticsearch.Net;
 using Entities.Models;
+using Entities.ViewModels.ElasticSearch;
 using Entities.ViewModels.Products;
 using IdGen;
 using MongoDB.Bson;
@@ -111,14 +112,18 @@ namespace WEB.CMS.Models.Product
             }
         }
 
-        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1,int status=-1, int page_index = 1, int page_size = 10,bool export_all=false,int SupplierId=0)
+        public async Task<List<ProductMongoDbModel>> Listing(string keyword = "", int group_id = -1,int status=-1, int page_index = 1, int page_size = 10,bool export_all=false)
         {
             try
             {
+                keyword = Regex.Escape(keyword.Trim());
+
+                var regex = new MongoDB.Bson.BsonRegularExpression(keyword.Trim(), "i");
+
                 var filter = Builders<ProductMongoDbModel>.Filter.Or(
-                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
-                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
-                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i"))
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, regex),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, regex),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, regex)
 
                                     );
                 filter &= Builders<ProductMongoDbModel>.Filter.Or(
@@ -129,11 +134,6 @@ namespace WEB.CMS.Models.Product
                 if (group_id > 0)
                 {
                     filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, new BsonRegularExpression($@"\b{group_id}\b"));
-
-                }
-                if (SupplierId > 0)
-                {
-                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, SupplierId);
 
                 }
                 if (status > 0)
@@ -158,14 +158,10 @@ namespace WEB.CMS.Models.Product
                             break;
                         case (int)ProductStatus.DEACTIVE:
                             {
-                                filter &= Builders<ProductMongoDbModel>.Filter.And(
-                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ACTIVE),
-                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
-                               );
                                 filter &= Builders<ProductMongoDbModel>.Filter.Or(
-                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ON_WAITING_CONFIRM),
-                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION)
-                              );
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.status, (int)ProductStatus.DEACTIVE),
+                                   Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
+                                );
                             }
                             break;
                         default:
@@ -207,14 +203,18 @@ namespace WEB.CMS.Models.Product
                 return null;
             }
         }
-        public async Task<long> CountListing(string keyword = "", int group_id = -1, int status = -1, int SupplierId = 0)
+        public async Task<long> CountListing(string keyword = "", int group_id = -1, int status = -1)
         {
             try
             {
+                keyword = Regex.Escape(keyword.Trim());
+
+                var regex = new MongoDB.Bson.BsonRegularExpression(keyword.Trim(), "i");
+
                 var filter = Builders<ProductMongoDbModel>.Filter.Or(
-                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
-                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
-                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i"))
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, regex),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, regex),
+                                    Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, regex)
 
                                     );
                 filter &= Builders<ProductMongoDbModel>.Filter.Or(
@@ -225,11 +225,6 @@ namespace WEB.CMS.Models.Product
                 if (group_id > 0)
                 {
                     filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, new BsonRegularExpression($@"\b{group_id}\b"));
-
-                }
-                if (SupplierId > 0)
-                {
-                    filter &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, SupplierId);
 
                 }
                 if (status > 0)
@@ -254,14 +249,10 @@ namespace WEB.CMS.Models.Product
                             break;
                         case (int)ProductStatus.DEACTIVE:
                             {
-                                filter &= Builders<ProductMongoDbModel>.Filter.And(
-                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ACTIVE),
-                                  Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
-                               );
                                 filter &= Builders<ProductMongoDbModel>.Filter.Or(
-                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.status, (int)ProductStatus.ON_WAITING_CONFIRM),
-                                 Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.ON_WAITING_CONFIRMATION)
-                              );
+                                   Builders<ProductMongoDbModel>.Filter.Eq(p => p.status, (int)ProductStatus.DEACTIVE),
+                                   Builders<ProductMongoDbModel>.Filter.Ne(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED)
+                                );
                             }
                             break;
                         default:
@@ -546,83 +537,87 @@ namespace WEB.CMS.Models.Product
                 return null;
             }
         }
-        public async Task<List<ProductMongoDbModel>> ListingProductBuyWith(string keyword = "", int group_id = -1, List<string>? current_id = null,int supplier_id=0)
+        public async Task<List<ProductMongoDbModel>> ListingProductBuyWith(string keyword = "", int group_id = -1, List<string>? current_id = null, bool main_product_requirement = false)
         {
             try
             {
-                var filter_general = Builders<ProductMongoDbModel>.Filter.Or(
+                var filter = Builders<ProductMongoDbModel>.Filter.Or(
                                     Builders<ProductMongoDbModel>.Filter.Regex(p => p.name, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
                                     Builders<ProductMongoDbModel>.Filter.Regex(p => p.sku, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i")),
                                     Builders<ProductMongoDbModel>.Filter.Regex(p => p.code, new MongoDB.Bson.BsonRegularExpression(keyword.Trim().ToLower(), "i"))
 
                                     );
 
-                filter_general &= Builders<ProductMongoDbModel>.Filter.Eq(s => s.status, (int)ProductStatus.ACTIVE);
-                filter_general &= Builders<ProductMongoDbModel>.Filter.Eq(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED);
-                filter_general &= Builders<ProductMongoDbModel>.Filter.Ne(p => p.price, 0);
-                filter_general &= Builders<ProductMongoDbModel>.Filter.Ne(p => p.amount, 0);
-                if (supplier_id > 0)
-                {
-                    filter_general &= Builders<ProductMongoDbModel>.Filter.Eq(x => x.supplier_id, supplier_id);
-
-                }
+                filter &= Builders<ProductMongoDbModel>.Filter.Eq(s => s.status, (int)ProductStatus.ACTIVE);
+                filter &= Builders<ProductMongoDbModel>.Filter.Eq(p => p.supplier_status, (int)SUPPLIER_STATUS.CONFIRMED);
                 if (group_id > 0)
                 {
-                    filter_general &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
+                    filter &= Builders<ProductMongoDbModel>.Filter.Regex(x => x.group_product_id, group_id.ToString());
                 }
+                if (main_product_requirement == false)
+                {
+                    // Điều kiện cho Trường hợp 1: parent_product_id là null hoặc rỗng, VÀ không có variation_detail
+                    var condition1_ParentIdNullOrEmpty = Builders<ProductMongoDbModel>.Filter.Or(
+                        Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
+                        Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
+                    );
+
+                    // Trường hợp không có variation_detail (null hoặc rỗng)
+                    var condition1_NoVariationDetail = Builders<ProductMongoDbModel>.Filter.Or(
+                        Builders<ProductMongoDbModel>.Filter.Eq(p => p.variation_detail, null),
+                        Builders<ProductMongoDbModel>.Filter.Size(p => p.variation_detail, 0)
+                    );
+                    // Hoặc cách này cũng hiệu quả và thường được dùng:
+                    // var condition1_NoVariationDetail = Builders<ProductMongoDbModel>.Filter.Where(p => p.variation_detail == null || !p.variation_detail.Any());
+
+
+                    var case1Filter = Builders<ProductMongoDbModel>.Filter.And(
+                        condition1_ParentIdNullOrEmpty,
+                        condition1_NoVariationDetail
+                    );
+
+                    // Điều kiện cho Trường hợp 2: Có parent_product_id VÀ cũng có variation_detail
+                    var condition2_HasParentId = Builders<ProductMongoDbModel>.Filter.And(
+                        Builders<ProductMongoDbModel>.Filter.Ne(p => p.parent_product_id, null),
+                        Builders<ProductMongoDbModel>.Filter.Ne(p => p.parent_product_id, string.Empty)
+                    );
+
+                    // Trường hợp có variation_detail (không null và không rỗng)
+                    var condition2_HasVariationDetail = Builders<ProductMongoDbModel>.Filter.ElemMatch(p => p.variation_detail, Builders<ProductDetailVariationAttributesMongoDbModel>.Filter.Exists(x => x.name));
+
+                    // Hoặc cách này:
+                    // var condition2_HasVariationDetail = Builders<ProductMongoDbModel>.Filter.Where(p => p.variation_detail != null && p.variation_detail.Any());
+
+
+                    var case2Filter = Builders<ProductMongoDbModel>.Filter.And(
+                        condition2_HasParentId,
+                        condition2_HasVariationDetail
+                    );
+
+                    // Kết hợp hai trường hợp bằng toán tử OR
+                    filter &= Builders<ProductMongoDbModel>.Filter.Or(
+                        case1Filter,
+                        case2Filter
+                    );
+                }
+                else
+                {
+                    var condition1_ParentIdNullOrEmpty = Builders<ProductMongoDbModel>.Filter.Or(
+                        Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
+                        Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
+                    );
+                    filter &= condition1_ParentIdNullOrEmpty;
+
+                }
+
+
+                filter &= Builders<ProductMongoDbModel>.Filter.Gt(p => p.amount, 0);
                 if (current_id != null && current_id.Count > 0)
                 {
-                    filter_general &= Builders<ProductMongoDbModel>.Filter.Nin(p => p._id, current_id);
-                    filter_general &= Builders<ProductMongoDbModel>.Filter.Nin(p => p.parent_product_id, current_id);
+                    filter &= Builders<ProductMongoDbModel>.Filter.Nin(p => p._id, current_id);
+                    filter &= Builders<ProductMongoDbModel>.Filter.Nin(p => p.parent_product_id, current_id);
 
                 }
-
-                // Điều kiện cho Trường hợp 1: parent_product_id là null hoặc rỗng, VÀ không có variation_detail
-                var condition1_ParentIdNullOrEmpty = Builders<ProductMongoDbModel>.Filter.Or(
-                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, null),
-                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.parent_product_id, "")
-                );
-
-                // Trường hợp không có variation_detail (null hoặc rỗng)
-                var condition1_NoVariationDetail = Builders<ProductMongoDbModel>.Filter.Or(
-                    Builders<ProductMongoDbModel>.Filter.Eq(p => p.variation_detail, null),
-                    Builders<ProductMongoDbModel>.Filter.Size(p => p.variation_detail, 0)
-                );
-                // Hoặc cách này cũng hiệu quả và thường được dùng:
-                // var condition1_NoVariationDetail = Builders<ProductMongoDbModel>.Filter.Where(p => p.variation_detail == null || !p.variation_detail.Any());
-
-
-                var case1Filter = Builders<ProductMongoDbModel>.Filter.And(
-                    condition1_ParentIdNullOrEmpty,
-                    condition1_NoVariationDetail,
-                    filter_general
-                );
-
-                // Điều kiện cho Trường hợp 2: Có parent_product_id VÀ cũng có variation_detail
-                var condition2_HasParentId = Builders<ProductMongoDbModel>.Filter.And(
-                    Builders<ProductMongoDbModel>.Filter.Ne(p => p.parent_product_id, null),
-                    Builders<ProductMongoDbModel>.Filter.Ne(p => p.parent_product_id, string.Empty)
-                );
-
-                // Trường hợp có variation_detail (không null và không rỗng)
-                var condition2_HasVariationDetail = Builders<ProductMongoDbModel>.Filter.ElemMatch(p => p.variation_detail, Builders<ProductDetailVariationAttributesMongoDbModel>.Filter.Exists(x => x.name));
-
-                // Hoặc cách này:
-                // var condition2_HasVariationDetail = Builders<ProductMongoDbModel>.Filter.Where(p => p.variation_detail != null && p.variation_detail.Any());
-
-
-                var case2Filter = Builders<ProductMongoDbModel>.Filter.And(
-                    condition2_HasParentId,
-                    condition2_HasVariationDetail,
-                     filter_general
-                );
-
-                // Kết hợp hai trường hợp bằng toán tử OR
-               var filter = Builders<ProductMongoDbModel>.Filter.Or(
-                    case1Filter,
-                    case2Filter
-                );
-                
                 var sort_filter = Builders<ProductMongoDbModel>.Sort;
                 var sort_filter_definition = sort_filter.Descending(x => x.updated_last);
                 var model = _productDetailCollection.Find(filter).Sort(sort_filter_definition);
@@ -745,5 +740,121 @@ namespace WEB.CMS.Models.Product
             }
             return null;
         }
+        public async Task<ProductMongoDbModel> UpdateProductFlashsale(ProductMongoDbModel item, FlashSale? active_flashsale, FlashSaleProduct? active_flashsale_product)
+        {
+            try
+            {
+                if (item == null || item._id == null) return null;
+
+                string product_id_compare = item._id;
+                if (item.parent_product_id != null && item.parent_product_id.Trim() != "")
+                {
+                    product_id_compare = item.parent_product_id;
+                }
+                if (active_flashsale != null && active_flashsale_product !=null
+                    && active_flashsale_product.Id >0 && active_flashsale_product.DiscountValue != null && active_flashsale_product.ValueType != null)
+                {
+                    double total_discount = 0;
+
+                    double percent = Convert.ToDouble(active_flashsale_product.DiscountValue);
+                    //if(item._id== "687dc3dfb1292b3f9b42b9c2")
+                    //{
+                    //    string console = "Match";
+                    //}
+                    var amount_product = item.amount;
+                    if (item.amount <= 0 && item.amount_min != null && item.amount_min > 0)
+                    {
+                        amount_product = (double)item.amount_min;
+
+                    }
+                    //double old_price = item.old_price == null || item.old_price <= 0 ? amount_product : (double)item.old_price;
+                    //if (old_price <= 0)
+                    //{
+                    //    old_price = amount_product;
+                    //}
+                    switch (active_flashsale_product.ValueType)
+                    {
+                        case 1:
+                            total_discount += (amount_product * Convert.ToDouble(percent / 100));
+                            break;
+                        case 0:
+                            total_discount += percent;
+                            break;
+
+                        default: break;
+                    }
+                    total_discount = Math.Round(total_discount, 0);
+                    item.exists_flashsale_id = active_flashsale.Id;
+                    item.flash_sale_fromdate = active_flashsale.FromDate;
+                    item.flash_sale_todate = active_flashsale.ToDate;
+                    item.exists_flashsale_name = active_flashsale.Name;
+                    item.amount_after_flashsale = amount_product - total_discount;
+                    //item.profit -= total_discount;
+                    if (item.amount <= 0 && item.amount_min != null && item.amount_min > 0)
+                    {
+                      item.flash_sale_amount_min=  item.amount_min - total_discount;
+                        item.flash_sale_amount_min  = Math.Ceiling((double)item.flash_sale_amount_min);
+
+                    }
+                    if (item.amount <= 0 && item.amount_max != null && item.amount_max > 0)
+                    {
+                        item.flash_sale_amount_max = item.amount_max - total_discount;
+                        item.flash_sale_amount_max = Math.Ceiling((double)item.flash_sale_amount_max);
+
+                    }
+                    item.flash_sale_discount = Math.Round(((amount_product - (double)item.amount_after_flashsale) / amount_product * 100), 0);
+                    item.flash_sale_discount = item.flash_sale_discount <= 0 ? 0 : item.flash_sale_discount;
+                    // item.price = amount_product- item.profit;
+                    item.flash_sale_old_price = amount_product;
+                    item.amount_after_flashsale = Math.Ceiling((double)item.amount_after_flashsale);
+                    //item.profit = NumberHelpers.RoundUpToHundredsDouble((double)item.profit);
+                    //item.flashsale_badge_type = exists_flash_sale_product.badgetype;
+                    //has_badge = true;
+                    item.flash_sale_unit = active_flashsale_product.ValueType;
+                    item.flash_sale_price_sales = Convert.ToDecimal(active_flashsale_product.DiscountValue);
+                    await UpdateAsync(item);
+                    return item;
+                }
+                else
+                {
+                    item.flash_sale_amount_max = null;
+                    item.flash_sale_amount_max = null;
+                    item.flash_sale_discount = null;
+                    item.exists_flashsale_id = null;
+                    item.exists_flashsale_name = null;
+                    item.amount_after_flashsale = null;
+                    item.flash_sale_discount = null;
+                    item.flash_sale_fromdate = null;
+                    item.flash_sale_todate = null;
+                    item.flash_sale_price_sales = null;
+                    item.flash_sale_unit = null;
+                    item.flash_sale_old_price = null;
+                }
+                //var base_product = await _productDetailMongoAccess.GetByID(item._id);
+                //if (base_product != null && base_product._id != null)
+                //{
+                //    item = JsonConvert.DeserializeObject<ProductMongoDbModelFEResponse>(JsonConvert.SerializeObject(base_product));
+
+                //}
+                //if (!has_badge) {
+                //    if (group_types != null && group_types.Count>0 && item.group_product_id!=null && item.group_product_id.Trim()!="" ) {
+                //        try
+                //        {
+                //            var exists = group_types.FirstOrDefault(x => x.Id == Convert.ToInt32(item.group_product_id.Trim().Split(",")[0]));
+                //            if (exists != null && exists.Id>0) { item.flashsale_badge_type = exists.Id; }
+                //        }
+                //        catch { }
+
+                //    }
+                //}
+            }
+            catch (Exception ex)
+            {
+                string error_msg = Assembly.GetExecutingAssembly().GetName().Name + "->" + MethodBase.GetCurrentMethod().Name + "=>" + ex.ToString();
+                LogHelper.InsertLogTelegramByUrl(_configuration["BotSetting:bot_token"], _configuration["BotSetting:bot_group_id"], error_msg);
+            }
+            return item;
+        }
+
     }
 }

@@ -117,7 +117,9 @@ var _product_constants = {
         AvatarSize: {
             Width: 207,
             Height:207
-        }
+        },
+        Attachment_Max_Image: 50,
+
     },
     HTML: {
         Product: `
@@ -515,7 +517,7 @@ var _product_constants_2 = {
                                                           
                                                             <div class="relative w-100">
                                                                 <input type="text" class="form-control" placeholder="" value="">
-                                                                <span class="note"><nw class="count">0</nw>/14</span>
+                                                                <span class="note"><nw class="count">0</nw>/50</span>
                                                             </div>
                                                             <div class="right-action">
                                                                 <a class="icon-action delete-attribute-detail" href="javascript:;"><i class="icofont-trash"></i></a>
